@@ -3,19 +3,14 @@ package io.keiji.region_cropper
 import io.keiji.region_cropper.entity.CandidateList
 import io.keiji.region_cropper.view.EditView
 import javafx.beans.value.ObservableValue
-import javafx.event.EventHandler
 import javafx.scene.Group
 import javafx.scene.Scene
-import javafx.scene.canvas.Canvas
 import javafx.scene.image.Image
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent
-import javafx.scene.input.MouseEvent
-import javafx.scene.paint.Color
 import javafx.stage.Stage
 import tornadofx.*
 import java.io.File
-import java.util.*
 
 val filePath = "/Users/keiji_ariyama/Desktop/megane/twitter/1/_namori_"
 
@@ -39,61 +34,35 @@ class Main : App() {
         canvas.addEventFilter(KeyEvent.KEY_PRESSED, { event ->
             run {
 
-                var shiftValue = 1.0f
+                val shiftValue = if (event.isShiftDown) 5.0f else 1.0f
 
-                if (event.isShiftDown) {
-                    shiftValue *= 5.0f
-                    if (event.code == KeyCode.ENTER) {
+                when {
+                    event.isShiftDown && event.code == KeyCode.ENTER -> {
                         if (!canvas.selectPrevRegion()) {
                             prevPicture(reverse = true)
                         }
-                    } else if (event.code == KeyCode.D) {
-                        canvas.deleteRegion()
                     }
-                }
-
-                if (event.isShortcutDown && event.isMetaDown) {
-                    if ((event.code == KeyCode.LEFT)) {
-                        canvas.expandToRight(-shiftValue)
-                    } else if ((event.code == KeyCode.UP)) {
-                        canvas.expandToBottom(-shiftValue)
-                    } else if ((event.code == KeyCode.RIGHT)) {
-                        canvas.expandToLeft(-shiftValue)
-                    } else if ((event.code == KeyCode.DOWN)) {
-                        canvas.expandToTop(-shiftValue)
-                    }
-                } else if (event.isAltDown) {
-                    if ((event.code == KeyCode.LEFT)) {
-                        canvas.expandToLeft(shiftValue)
-                    } else if ((event.code == KeyCode.UP)) {
-                        canvas.expandToTop(shiftValue)
-                    } else if ((event.code == KeyCode.RIGHT)) {
-                        canvas.expandToRight(shiftValue)
-                    } else if ((event.code == KeyCode.DOWN)) {
-                        canvas.expandToBottom(shiftValue)
-                    }
-                } else {
-                    if (!event.isShiftDown && event.code == KeyCode.ENTER) {
+                    event.isShiftDown && event.code == KeyCode.D -> canvas.deleteRegion()
+                    event.isShortcutDown && event.code == KeyCode.LEFT -> canvas.expandToRight(-shiftValue)
+                    event.isShortcutDown && event.code == KeyCode.UP -> canvas.expandToBottom(-shiftValue)
+                    event.isShortcutDown && event.code == KeyCode.RIGHT -> canvas.expandToLeft(-shiftValue)
+                    event.isShortcutDown && event.code == KeyCode.DOWN -> canvas.expandToTop(-shiftValue)
+                    event.isAltDown && event.code == KeyCode.LEFT -> canvas.expandToLeft(shiftValue)
+                    event.isAltDown && event.code == KeyCode.UP -> canvas.expandToTop(shiftValue)
+                    event.isAltDown && event.code == KeyCode.RIGHT -> canvas.expandToRight(shiftValue)
+                    event.isAltDown && event.code == KeyCode.DOWN -> canvas.expandToBottom(shiftValue)
+                    !event.isShiftDown && event.code == KeyCode.ENTER -> {
                         if (!canvas.selectNextRegion()) {
                             nextPicture()
                         }
                     }
-
-                    if ((event.code == KeyCode.LEFT)) {
-                        canvas.moveToLeft(shiftValue)
-                    } else if ((event.code == KeyCode.UP)) {
-                        canvas.moveToTop(shiftValue)
-                    } else if ((event.code == KeyCode.RIGHT)) {
-                        canvas.moveToRight(shiftValue)
-                    } else if ((event.code == KeyCode.DOWN)) {
-                        canvas.moveToBottom(shiftValue)
-                    } else if ((event.code == KeyCode.N)) {
-                        canvas.toggleFace()
-                    } else if (event.code == KeyCode.END) {
-                        nextPicture()
-                    } else if (event.code == KeyCode.HOME) {
-                        prevPicture()
-                    }
+                    event.code == KeyCode.LEFT -> canvas.moveToLeft(shiftValue)
+                    event.code == KeyCode.UP -> canvas.moveToTop(shiftValue)
+                    event.code == KeyCode.RIGHT -> canvas.moveToRight(shiftValue)
+                    event.code == KeyCode.DOWN -> canvas.moveToBottom(shiftValue)
+                    event.code == KeyCode.N -> canvas.toggleFace()
+                    event.code == KeyCode.END -> nextPicture()
+                    event.code == KeyCode.HOME -> prevPicture()
                 }
                 canvas.draw()
             }
