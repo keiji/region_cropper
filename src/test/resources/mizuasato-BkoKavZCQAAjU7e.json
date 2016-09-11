@@ -1,0 +1,91 @@
+{
+    "file_name": "mizuasato-BkoKavZCQAAjU7e.jpg",
+    "created_at": "2016-09-11T13:11:03.074767",
+    "generator": "Megane Co",
+    "detected_faces": {
+        "engine_version": "20160906",
+        "model_version": "20160906153112",
+        "regions": [
+            {
+                "likelihood": 0.9999978542327881,
+                "is_face": true,
+                "rect": {
+                    "left": 216.0,
+                    "bottom": 334.0,
+                    "top": 137.0,
+                    "right": 367.0
+                }
+            },
+            {
+                "likelihood": 0.9971753358840942,
+                "is_face": true,
+                "rect": {
+                    "left": 158.0,
+                    "bottom": 832.0,
+                    "top": 636.0,
+                    "right": 345.0
+                }
+            },
+            {
+                "likelihood": 0.9986322522163391,
+                "is_face": true,
+                "rect": {
+                    "left": 73.0,
+                    "bottom": 559.0,
+                    "top": 271.0,
+                    "right": 233.0
+                }
+            },
+            {
+                "likelihood": 0.9991369843482971,
+                "is_face": true,
+                "rect": {
+                    "left": 445.0,
+                    "bottom": 443.0,
+                    "top": 259.0,
+                    "right": 571.0
+                }
+            },
+            {
+                "likelihood": 0.9999881982803345,
+                "is_face": true,
+                "rect": {
+                    "left": 392.0,
+                    "bottom": 621.0,
+                    "top": 462.0,
+                    "right": 530.0
+                }
+            },
+            {
+                "likelihood": 0.9997132420539856,
+                "is_face": true,
+                "rect": {
+                    "left": 58.0,
+                    "bottom": 127.0,
+                    "top": 63.0,
+                    "right": 104.0
+                }
+            },
+            {
+                "likelihood": 0.9999916553497314,
+                "is_face": true,
+                "rect": {
+                    "left": 174.0,
+                    "bottom": 116.0,
+                    "top": 63.0,
+                    "right": 215.0
+                }
+            }
+        ],
+        "configurations": {
+            "score_equals_delta": 0.0005,
+            "with_regression": true,
+            "selective_search_min_size": 2800,
+            "mode": "selective_search",
+            "region_overlap_rate": 0.32,
+            "solid_histogram_threshold": 0.8,
+            "likelihood_threshold_filter": 0.6,
+            "likelihood_threshold_regression": 0.999
+        }
+    }
+}

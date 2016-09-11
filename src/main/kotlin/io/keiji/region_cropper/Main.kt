@@ -48,7 +48,7 @@ class Main : App() {
         editView.addEventFilter(KeyEvent.KEY_PRESSED, { event ->
             run {
 
-                val shiftValue = if (event.isShiftDown) 5.0f else 1.0f
+                val shiftValue = if (event.isShiftDown) 1.0f else 5.0f
 
                 when {
                     event.isShiftDown && event.code == KeyCode.ENTER -> {
@@ -90,7 +90,7 @@ class Main : App() {
                     observableValue: ObservableValue<out Number>, oldValue: Number, newValue: Number ->
                     run {
                         editView.width = newValue.toDouble()
-                        editView.draw()
+                        editView.onResize()
                     }
                 })
         stage.heightProperty().addListener(
@@ -98,7 +98,7 @@ class Main : App() {
                     observableValue: ObservableValue<out Number>, oldValue: Number, newValue: Number ->
                     run {
                         editView.height = newValue.toDouble()
-                        editView.draw()
+                        editView.onResize()
                     }
                 })
 

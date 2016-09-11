@@ -7,8 +7,8 @@ import java.io.File
 import java.nio.charset.Charset
 import java.util.*
 
-class CandidateComparator : Comparator<CandidateList.Candidate> {
-    override fun compare(obj1: CandidateList.Candidate, obj2: CandidateList.Candidate): Int {
+class PositionComparator : Comparator<CandidateList.Region> {
+    override fun compare(obj1: CandidateList.Region, obj2: CandidateList.Region): Int {
         when {
             obj1.rect.left > obj2.rect.left -> return 1
             obj1.rect.left < obj2.rect.left -> return -1
@@ -19,27 +19,28 @@ class CandidateComparator : Comparator<CandidateList.Candidate> {
     }
 }
 
+class LikelihoodComparator : Comparator<CandidateList.Region> {
+    override fun compare(obj1: CandidateList.Region, obj2: CandidateList.Region): Int {
+        when {
+            obj1.likelihood > obj2.likelihood -> return 1
+            obj1.likelihood < obj2.likelihood -> return -1
+            else -> return 0
+        }
+    }
+}
+
 data class CandidateList(
         @SerializedName("generator")
         val generator: String,
 
-        @SerializedName("model_version")
-        val modelVersion: String,
-
-        @SerializedName("engine_version")
-        val engineVersion: String,
-
         @SerializedName("file_name")
         val fileName: String,
 
-        @SerializedName("mode")
-        val mode: String,
+        @SerializedName("detected_faces")
+        val detectedFaces: DetectedFaces,
 
-        @SerializedName("candidates")
-        val candidates: ArrayList<Candidate>,
-
-        @SerializedName("regions")
-        var regions: ArrayList<Candidate>?,
+        @SerializedName("faces")
+        var faces: ArrayList<Region>?,
 
         @SerializedName("created_at")
         val createdAt: String
@@ -52,11 +53,28 @@ data class CandidateList(
     }
 
     fun save(file: File?) {
+        Collections.sort(faces, LikelihoodComparator())
+
         val gson = GsonBuilder().setPrettyPrinting().create();
         file!!.writeText(gson.toJson(this, CandidateList::class.java), Charset.forName("UTF-8"))
+
+        Collections.sort(faces, PositionComparator())
     }
 
-    data class Candidate(
+    data class DetectedFaces(
+            @SerializedName("model_version")
+            val modelVersion: String,
+
+            @SerializedName("engine_version")
+            val engineVersion: String,
+
+            @SerializedName("regions")
+            val regions: ArrayList<Region>
+    ) {
+
+    }
+
+    data class Region(
             @SerializedName("likelihood")
             val likelihood: Double,
 
@@ -66,7 +84,7 @@ data class CandidateList(
             @SerializedName("rect")
             val rect: Rect
     ) {
-        class Rect(
+        data class Rect(
                 @SerializedName("left")
                 var left: Float,
 

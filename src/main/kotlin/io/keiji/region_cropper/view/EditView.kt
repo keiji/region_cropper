@@ -1,9 +1,10 @@
 package io.keiji.region_cropper.view
 
-import io.keiji.region_cropper.entity.CandidateComparator
+import io.keiji.region_cropper.entity.PositionComparator
 import io.keiji.region_cropper.entity.CandidateList
 import javafx.scene.canvas.Canvas
 import javafx.scene.image.Image
+import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import javafx.scene.paint.Color
 import java.io.File
@@ -17,8 +18,19 @@ private val BLACK = Color(0.0, 0.0, 0.0, 1.0).let {
     it.brighter()
 }
 
+private val GRAY = Color(0.3, 0.3, 0.3, 1.0).let {
+    it.brighter()
+}
+
 private val RED = Color(1.0, 0.0, 0.0, 1.0).let {
     it.darker()
+}
+
+private val NOT_SELECTED = CandidateList.Region(
+        -1.0, false,
+        CandidateList.Region.Rect(0.0f, 0.0f, 0.0f, 0.0f))
+
+private data class Point(var x: Double, var y: Double) {
 }
 
 class EditView() : Canvas() {
@@ -26,45 +38,72 @@ class EditView() : Canvas() {
     lateinit var imageData: Image
     lateinit var candidateList: CandidateList
 
-    lateinit var selectedCandidate: CandidateList.Candidate
+    lateinit var selectedCandidate: CandidateList.Region
     private var selectedIndex: Int = 0
 
+    private var reticle: Point = Point(0.0, 0.0)
+
+    private val keyUpImage: Image
+
     init {
+        keyUpImage = Image(javaClass.getClassLoader().getResourceAsStream("ic_keyboard_arrow_up_black_36dp.png"));
+
         addEventFilter(MouseEvent.ANY, { event ->
             run {
-//                println(event)
+                when {
+                    event.button == MouseButton.PRIMARY && event.eventType == MouseEvent.MOUSE_CLICKED -> {
+                        val point = Point(0.0, 0.0)
+                        convertLogicalPoint(event.sceneX, event.sceneY, point)
+                        addRegion(point.x.toFloat(), point.y.toFloat())
+                    }
+                    else -> {
+                        convertLogicalPoint(event.sceneX, event.sceneY, reticle)
+                    }
+                }
+                draw()
             }
         })
-    }
-
-    fun setData(image: Image, candidateList: CandidateList, reverse: Boolean) {
-        imageData = image
-        this.candidateList = candidateList
-
-        if (this.candidateList.regions == null) {
-            this.candidateList.regions = ArrayList<CandidateList.Candidate>()
-
-            for (c: CandidateList.Candidate in candidateList.candidates) {
-                val cRect = c.rect
-                val rect = CandidateList.Candidate.Rect(cRect.left, cRect.top, cRect.right, cRect.bottom)
-                val candidate: CandidateList.Candidate = CandidateList.Candidate(c.likelihood, c.isFace, rect)
-                this.candidateList.regions!!.add(candidate)
-            }
-        }
-
-        Collections.sort(candidateList.regions, CandidateComparator())
-
-        selectedIndex = if (!reverse) 0 else (this.candidateList.regions!!.size - 1)
-        selectedCandidate = this.candidateList.regions!![selectedIndex]
     }
 
     var scale: Double = 1.0
     var paddingHorizontal: Double = 0.0
     var paddingVertical: Double = 0.0
 
-    fun draw() {
-        graphicsContext2D.clearRect(0.0, 0.0, width, height)
+    private fun convertLogicalPoint(x: Double, y: Double, point: Point) {
+        val xPos: Double = (x - paddingHorizontal) / scale
+        val yPos: Double = (y - paddingVertical) / scale
 
+        point.x = xPos
+        point.y = yPos
+    }
+
+    fun setData(image: Image, candidateList: CandidateList, reverse: Boolean) {
+        imageData = image
+        this.candidateList = candidateList
+
+        if (this.candidateList.faces == null) {
+            this.candidateList.faces = ArrayList<CandidateList.Region>()
+
+            for (c: CandidateList.Region in candidateList.detectedFaces.regions) {
+                val candidate: CandidateList.Region = CandidateList.Region(0.0, c.isFace, c.rect.copy())
+                this.candidateList.faces!!.add(candidate)
+            }
+        }
+
+        Collections.sort(candidateList.faces, PositionComparator())
+
+        if (candidateList.faces!!.size == 0) {
+            selectedIndex = -1
+            return
+        }
+
+        selectedIndex = if (!reverse) 0 else (this.candidateList.faces!!.size - 1)
+        selectedCandidate = this.candidateList.faces!![selectedIndex]
+
+        onResize()
+    }
+
+    fun onResize() {
         val scaleHorizontal = width / imageData.width
         val scaleVertical = height / imageData.height
 
@@ -73,40 +112,59 @@ class EditView() : Canvas() {
         paddingHorizontal = (width - (imageData.width * scale)) / 2
         paddingVertical = (height - 24 /* タイトルバーのサイズ */ - ((imageData.height) * scale)) / 2
 
-        graphicsContext2D.drawImage(imageData,
-                paddingHorizontal,
-                paddingVertical,
+        draw()
+    }
+
+    fun draw() {
+        val gc = graphicsContext2D
+        gc.clearRect(0.0, 0.0, width, height)
+
+        gc.save()
+
+        gc.translate(paddingHorizontal, paddingVertical)
+
+        gc.drawImage(imageData,
+                0.0,
+                0.0,
                 imageData.width * scale,
                 imageData.height * scale)
 
-        graphicsContext2D.lineWidth = 2.0
+        gc.lineWidth = 2.0
 
-        for (c: CandidateList.Candidate in candidateList.regions!!) {
+        for (c: CandidateList.Region in candidateList.faces!!) {
 
             when {
-                selectedCandidate == c -> graphicsContext2D.stroke = BLUE
-                !c.isFace -> graphicsContext2D.stroke = BLACK
-                else -> graphicsContext2D.stroke = RED
+                !c.isFace && selectedCandidate == c -> gc.stroke = GRAY
+                selectedCandidate == c -> gc.stroke = BLUE
+                !c.isFace -> gc.stroke = BLACK
+                else -> gc.stroke = RED
             }
 
             val rect = c.rect
-            graphicsContext2D.strokeRect(
-                    paddingHorizontal + rect.left * scale,
-                    paddingVertical + rect.top * scale,
+            gc.strokeRect(
+                    rect.left * scale,
+                    rect.top * scale,
                     rect.width() * scale,
                     rect.height() * scale
             )
         }
+
+//        gc.fillOval(
+//                reticle.x * scale,
+//                reticle.y * scale,
+//                10.0, 10.0)
+
+        gc.restore()
     }
 
     fun selectNextRegion(): Boolean {
-        if (selectedIndex >= candidateList.regions!!.size - 1) {
+        if (selectedIndex >= candidateList.faces!!.size - 1) {
             return false
         } else {
             selectedIndex++
         }
 
-        selectedCandidate = candidateList.regions!![selectedIndex]
+        selectedCandidate = candidateList.faces!![selectedIndex]
         return true
     }
 
@@ -118,7 +176,7 @@ class EditView() : Canvas() {
             selectedIndex--
         }
 
-        selectedCandidate = candidateList.regions!![selectedIndex]
+        selectedCandidate = candidateList.faces!![selectedIndex]
         return true
     }
 
@@ -186,15 +244,28 @@ class EditView() : Canvas() {
         if (!selectedCandidate.isFace) {
             return
         }
-        candidateList.regions!!.remove(selectedCandidate)
-        selectedIndex = 0
+
+        candidateList.faces!!.remove(selectedCandidate)
+
+        if (selectedIndex > candidateList.faces!!.size - 1) {
+            selectedIndex -= 1
+        }
+
+        if (selectedIndex < 0) {
+            selectedCandidate = NOT_SELECTED
+            return
+        }
+
+        selectedCandidate = candidateList.faces!![selectedIndex]
     }
 
     fun addRegion(x: Float, y: Float) {
-        selectedCandidate = CandidateList.Candidate(0.0, true,
-                CandidateList.Candidate.Rect(x - 15, y - 15, x + 15, y + 15))
-        candidateList.regions!!.add(selectedCandidate)
-        selectedIndex = candidateList.regions!!.size - 1
+        selectedCandidate = CandidateList.Region(0.0, true,
+                CandidateList.Region.Rect(x - 15, y - 15, x + 15, y + 15))
+        candidateList.faces!!.add(selectedCandidate)
+        Collections.sort(candidateList.faces!!, PositionComparator())
+
+        selectedIndex = candidateList.faces!!.indexOf(selectedCandidate)
     }
 
     fun toggleFace() {
