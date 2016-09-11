@@ -7,6 +7,18 @@ import java.io.File
 import java.nio.charset.Charset
 import java.util.*
 
+class CandidateComparator : Comparator<CandidateList.Candidate> {
+    override fun compare(obj1: CandidateList.Candidate, obj2: CandidateList.Candidate): Int {
+        when {
+            obj1.rect.left > obj2.rect.left -> return 1
+            obj1.rect.left < obj2.rect.left -> return -1
+            obj1.rect.top > obj2.rect.top -> return -1
+            obj1.rect.top < obj2.rect.top -> return 1
+            else -> return 0
+        }
+    }
+}
+
 data class CandidateList(
         @SerializedName("generator")
         val generator: String,
@@ -27,7 +39,7 @@ data class CandidateList(
         val candidates: ArrayList<Candidate>,
 
         @SerializedName("regions")
-        var regions: ArrayList<Candidate>,
+        var regions: ArrayList<Candidate>?,
 
         @SerializedName("created_at")
         val createdAt: String
@@ -44,28 +56,29 @@ data class CandidateList(
         file!!.writeText(gson.toJson(this, CandidateList::class.java), Charset.forName("UTF-8"))
     }
 
-    class Candidate(likelihood: Double, isFace: Boolean, rect: Rect) {
-        @SerializedName("likelihood")
-        val likelihood: Double = likelihood
+    data class Candidate(
+            @SerializedName("likelihood")
+            val likelihood: Double,
 
-        @SerializedName("rect")
-        val rect: Rect = rect
+            @SerializedName("is_face")
+            var isFace: Boolean,
 
-        @SerializedName("is_face")
-        var isFace: Boolean = isFace
+            @SerializedName("rect")
+            val rect: Rect
+    ) {
+        class Rect(
+                @SerializedName("left")
+                var left: Float,
 
-        class Rect(left: Float, top: Float, right: Float, bottom: Float) {
-            @SerializedName("left")
-            var left: Float = left
+                @SerializedName("top")
+                var top: Float,
 
-            @SerializedName("top")
-            var top: Float = top
+                @SerializedName("right")
+                var right: Float,
 
-            @SerializedName("right")
-            var right: Float = right
-
-            @SerializedName("bottom")
-            var bottom: Float = bottom
+                @SerializedName("bottom")
+                var bottom: Float
+        ) {
 
             fun width(): Float {
                 return right - left
