@@ -9,11 +9,14 @@ import java.util.*
 
 class PositionComparator : Comparator<CandidateList.Region> {
     override fun compare(obj1: CandidateList.Region, obj2: CandidateList.Region): Int {
+        val distance1 = Math.sqrt(Math.pow(obj1.rect.centerX().toDouble(), 2.0)
+                + Math.pow(obj1.rect.centerY().toDouble(), 2.0))
+        val distance2 = Math.sqrt(Math.pow(obj2.rect.centerX().toDouble(), 2.0)
+                + Math.pow(obj2.rect.centerY().toDouble(), 2.0))
+
         when {
-            obj1.rect.left > obj2.rect.left -> return 1
-            obj1.rect.left < obj2.rect.left -> return -1
-            obj1.rect.top > obj2.rect.top -> return -1
-            obj1.rect.top < obj2.rect.top -> return 1
+            distance1 > distance2 -> return 1
+            distance1 < distance2 -> return -1
             else -> return 0
         }
     }
@@ -104,6 +107,14 @@ data class CandidateList(
 
             fun height(): Float {
                 return bottom - top
+            }
+
+            fun centerX(): Float {
+                return left + width() / 2
+            }
+
+            fun centerY(): Float {
+                return top + height() / 2
             }
 
             fun offset(x: Float, y: Float) {

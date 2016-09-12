@@ -23,23 +23,25 @@ class RegionListTest {
 
     @Test
     fun test() {
-        if (candidateList == null) {
-            fail()
-        }
-
+        assertNotNull(candidateList)
         assertEquals("Megane Co", candidateList!!.generator)
         assertEquals("mizuasato-BkoKavZCQAAjU7e.jpg", candidateList!!.fileName)
         assertEquals("2016-09-11T13:11:03.074767", candidateList!!.createdAt)
+        assertEquals("20160906153112", candidateList!!.detectedFaces.modelVersion)
+        assertEquals("20160906", candidateList!!.detectedFaces.engineVersion)
 
-        for (c: CandidateList.Region in candidateList!!.detectedFaces.regions) {
-            assertEquals(0.9985449314117432, c.likelihood, 0.0000000000000001)
-            assertEquals(true, c.isFace)
+        assertEquals(7, candidateList!!.detectedFaces.regions.size)
 
-            val rect: CandidateList.Region.Rect = c.rect
-            assertEquals(519.0F, rect.left)
-            assertEquals(5.0F, rect.top)
-            assertEquals(598.0F, rect.right)
-            assertEquals(78.0F, rect.bottom)
+        candidateList!!.detectedFaces.regions[0].let {
+            assertEquals(0.9999978542327881, it.likelihood, 0.0000000000000001)
+            assertEquals(true, it.isFace)
+
+            it.rect.let {
+                assertEquals(216.0F, it.left)
+                assertEquals(137.0F, it.top)
+                assertEquals(367.0F, it.right)
+                assertEquals(334.0F, it.bottom)
+            }
         }
     }
 }

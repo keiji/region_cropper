@@ -5,6 +5,8 @@ import io.keiji.region_cropper.entity.CandidateList
 import javafx.scene.canvas.Canvas
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
+import javafx.scene.input.KeyCode
+import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import javafx.scene.paint.Color
@@ -24,7 +26,13 @@ private val NOT_SELECTED = CandidateList.Region(
 private data class Point(var x: Double, var y: Double) {
 }
 
-class EditView() : Canvas() {
+class EditView(val callback: Callback) : Canvas() {
+
+    interface Callback {
+        fun onNextFile(reverse: Boolean = false)
+        fun onPreviousFile(reverse: Boolean = false)
+        fun onShowResetConfirmationDialog()
+    }
 
     enum class Mode {
         Normal,
@@ -33,6 +41,7 @@ class EditView() : Canvas() {
     }
 
     var mode: Mode = Mode.Normal
+    var showReticle: Boolean = false
 
     lateinit var imageData: Image
     lateinit var candidateList: CandidateList
@@ -54,6 +63,70 @@ class EditView() : Canvas() {
         keyRightImage = Image(cl.getResourceAsStream("ic_keyboard_arrow_right_red.png"));
         keyDownImage = Image(cl.getResourceAsStream("ic_keyboard_arrow_down_red.png"));
 
+        addEventFilter(KeyEvent.KEY_PRESSED, { event ->
+            run {
+
+                val shiftValue = if (event.isShiftDown) 1.0f else 5.0f
+
+                when {
+                    event.code == KeyCode.SPACE -> showReticle = true
+                    event.isShortcutDown -> mode = Mode.Shrink
+                    event.isAltDown -> mode = Mode.Expand
+                }
+
+                when {
+                    event.isShiftDown && event.code == KeyCode.ENTER -> {
+                        if (!selectPrevRegion()) {
+                            callback.onPreviousFile(true)
+                        }
+                    }
+                    event.code == KeyCode.ENTER -> {
+                        if (!selectNextRegion()) {
+                            callback.onNextFile()
+                        }
+                    }
+                    event.isShiftDown && event.code == KeyCode.TAB -> {
+                        selectPrevRegion()
+                    }
+                    event.code == KeyCode.TAB -> {
+                        selectNextRegion()
+                    }
+                    event.isShiftDown && event.code == KeyCode.D -> deleteRegion()
+                    event.isShortcutDown && event.code == KeyCode.LEFT -> expandToRight(-shiftValue)
+                    event.isShortcutDown && event.code == KeyCode.UP -> expandToBottom(-shiftValue)
+                    event.isShortcutDown && event.code == KeyCode.RIGHT -> expandToLeft(-shiftValue)
+                    event.isShortcutDown && event.code == KeyCode.DOWN -> expandToTop(-shiftValue)
+                    event.isAltDown && event.code == KeyCode.LEFT -> expandToLeft(shiftValue)
+                    event.isAltDown && event.code == KeyCode.UP -> expandToTop(shiftValue)
+                    event.isAltDown && event.code == KeyCode.RIGHT -> expandToRight(shiftValue)
+                    event.isAltDown && event.code == KeyCode.DOWN -> expandToBottom(shiftValue)
+                    event.code == KeyCode.ESCAPE -> callback.onShowResetConfirmationDialog()
+                    event.code == KeyCode.BACK_SPACE -> deleteRegion()
+                    event.code == KeyCode.LEFT -> moveToLeft(shiftValue)
+                    event.code == KeyCode.UP -> moveToTop(shiftValue)
+                    event.code == KeyCode.RIGHT -> moveToRight(shiftValue)
+                    event.code == KeyCode.DOWN -> moveToBottom(shiftValue)
+                    event.code == KeyCode.N -> toggleFace()
+                    event.code == KeyCode.END -> callback.onNextFile()
+                    event.code == KeyCode.HOME -> callback.onPreviousFile()
+                }
+                draw()
+            }
+        })
+
+        addEventFilter(KeyEvent.KEY_RELEASED, { event ->
+            run {
+                when {
+                    event.code == KeyCode.SPACE -> showReticle = false
+                    event.isShortcutDown -> mode = Mode.Shrink
+                    event.isAltDown -> mode = Mode.Expand
+                    else -> mode = Mode.Normal
+
+                }
+                draw()
+            }
+        })
+
         addEventFilter(MouseEvent.ANY, { event ->
             run {
                 when {
@@ -62,9 +135,7 @@ class EditView() : Canvas() {
                         convertLogicalPoint(event.sceneX, event.sceneY, point)
                         addRegion(point.x.toFloat(), point.y.toFloat())
                     }
-                    else -> {
-                        convertLogicalPoint(event.sceneX, event.sceneY, reticle)
-                    }
+                    else -> convertLogicalPoint(event.sceneX, event.sceneY, reticle)
                 }
                 draw()
             }
@@ -118,7 +189,7 @@ class EditView() : Canvas() {
                 imageData.width * scale,
                 imageData.height * scale)
 
-        gc.lineWidth = 2.0
+        gc.lineWidth = 1.0
 
         for (c: CandidateList.Region in candidateList.faces!!) {
             if (c != selectedCandidate) {
@@ -127,6 +198,22 @@ class EditView() : Canvas() {
         }
 
         drawRegion(selectedCandidate, gc, true)
+
+        if (showReticle) {
+            when {
+                !selectedCandidate.isFace -> gc.stroke = NOT_FACE_SELECTED
+                else -> gc.stroke = FACE_SELECTED
+            }
+
+            gc.strokeLine(selectedCandidate.rect.centerX() * scale,
+                    0.0,
+                    selectedCandidate.rect.centerX() * scale,
+                    imageData.height * scale)
+            gc.strokeLine(0.0,
+                    selectedCandidate.rect.centerY() * scale,
+                    imageData.width * scale,
+                    selectedCandidate.rect.centerY() * scale)
+        }
 
         gc.restore()
     }
@@ -150,7 +237,7 @@ class EditView() : Canvas() {
                 rect.height() * scale
         )
 
-        if (!isSelected) {
+        if (!isSelected || !c.isFace) {
             return
         }
 
@@ -180,7 +267,7 @@ class EditView() : Canvas() {
         }
     }
 
-    fun selectNextRegion(): Boolean {
+    private fun selectNextRegion(): Boolean {
         if (selectedIndex >= candidateList.faces!!.size - 1) {
             return false
         } else {
@@ -191,7 +278,7 @@ class EditView() : Canvas() {
         return true
     }
 
-    fun selectPrevRegion(): Boolean {
+    private fun selectPrevRegion(): Boolean {
         if (selectedIndex <= 0) {
             selectedIndex = 0
             return false
@@ -203,56 +290,56 @@ class EditView() : Canvas() {
         return true
     }
 
-    fun moveToLeft(size: Float) {
+    private fun moveToLeft(size: Float) {
         if (!selectedCandidate.isFace) {
             return
         }
         selectedCandidate.rect.offset(-size, 0f)
     }
 
-    fun moveToTop(size: Float) {
+    private fun moveToTop(size: Float) {
         if (!selectedCandidate.isFace) {
             return
         }
         selectedCandidate.rect.offset(0f, -size)
     }
 
-    fun moveToRight(size: Float) {
+    private fun moveToRight(size: Float) {
         if (!selectedCandidate.isFace) {
             return
         }
         selectedCandidate.rect.offset(size, 0f)
     }
 
-    fun moveToBottom(size: Float) {
+    private fun moveToBottom(size: Float) {
         if (!selectedCandidate.isFace) {
             return
         }
         selectedCandidate.rect.offset(0f, size)
     }
 
-    fun expandToLeft(size: Float) {
+    private fun expandToLeft(size: Float) {
         if (!selectedCandidate.isFace) {
             return
         }
         selectedCandidate.rect.left -= size
     }
 
-    fun expandToTop(size: Float) {
+    private fun expandToTop(size: Float) {
         if (!selectedCandidate.isFace) {
             return
         }
         selectedCandidate.rect.top -= size
     }
 
-    fun expandToRight(size: Float) {
+    private fun expandToRight(size: Float) {
         if (!selectedCandidate.isFace) {
             return
         }
         selectedCandidate.rect.right += size
     }
 
-    fun expandToBottom(size: Float) {
+    private fun expandToBottom(size: Float) {
         if (!selectedCandidate.isFace) {
             return
         }
@@ -263,7 +350,7 @@ class EditView() : Canvas() {
         candidateList.save(imageFile)
     }
 
-    fun deleteRegion() {
+    private fun deleteRegion() {
         if (!selectedCandidate.isFace) {
             return
         }
@@ -282,16 +369,20 @@ class EditView() : Canvas() {
         selectedCandidate = candidateList.faces!![selectedIndex]
     }
 
-    fun addRegion(x: Float, y: Float) {
+    private val NEW_RECT_SIZE = 30
+
+    private fun addRegion(x: Float, y: Float) {
+        val halfSize = NEW_RECT_SIZE / 2
         selectedCandidate = CandidateList.Region(0.0, true,
-                CandidateList.Region.Rect(x - 15, y - 15, x + 15, y + 15))
+                CandidateList.Region.Rect(x - halfSize, y - halfSize, x + halfSize, y + halfSize))
         candidateList.faces!!.add(selectedCandidate)
+
         Collections.sort(candidateList.faces!!, PositionComparator())
 
         selectedIndex = candidateList.faces!!.indexOf(selectedCandidate)
     }
 
-    fun toggleFace() {
+    private fun toggleFace() {
         selectedCandidate.isFace = !selectedCandidate.isFace
     }
 

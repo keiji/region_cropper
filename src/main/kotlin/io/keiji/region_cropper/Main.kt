@@ -6,111 +6,77 @@ import javafx.application.Application
 import javafx.beans.value.ObservableValue
 import javafx.scene.Group
 import javafx.scene.Scene
-import javafx.scene.control.Alert;
+import javafx.scene.control.Alert
 import javafx.scene.control.Button
 import javafx.scene.control.ButtonType
 import javafx.scene.image.Image
-import javafx.scene.input.KeyCode
-import javafx.scene.input.KeyEvent
+import javafx.stage.DirectoryChooser
 import javafx.stage.Stage
-import tornadofx.*
+import tornadofx.App
 import java.io.File
 
 class Main : App() {
-    var index: Int = 0
+    var file_index: Int = 0
+    private lateinit var stage: Stage
     private lateinit var fileList: List<String>
     private lateinit var baseDir: File
+    private lateinit var jsonFile: File
 
-    val editView: EditView = EditView()
+    private val editViewCallback = object : EditView.Callback {
+        override fun onNextFile(reverse: Boolean) {
+            nextPicture(reverse)
+        }
 
-    fun initialize(filePath: String) {
-        var file = File(filePath)
-        baseDir = if (file.isDirectory) file else file.parentFile
+        override fun onPreviousFile(reverse: Boolean) {
+            prevPicture(reverse)
+        }
+
+        override fun onShowResetConfirmationDialog() {
+            showResetDialog()
+        }
+    }
+
+    val editView: EditView = EditView(editViewCallback)
+
+    fun initialize(file: File) {
+        var filePath: File = file
+        baseDir = if (filePath.isDirectory) filePath else filePath.parentFile
         fileList = baseDir.list().filter(
                 {
                     it.endsWith(".json")
                 })
 
-        if (file.isDirectory) {
-            file = File(baseDir, fileList[index])
+        if (filePath.isDirectory) {
+            filePath = File(baseDir, fileList[file_index])
         } else {
-            index = fileList.indexOf(file.name)
-            print(index)
+            file_index = fileList.indexOf(filePath.name)
+            print(file_index)
         }
 
-        loadFile(file)
+        loadFile(filePath)
     }
 
     override fun start(stage: Stage) {
+        this.stage = stage
 
         val parameters: Application.Parameters = parameters
-        val filePath = parameters.unnamed[0]
-        initialize(filePath)
 
-        stage.title = "Drawing Operations Test"
+        val filePath: File?
+        if (parameters.unnamed.size > 0) {
+            filePath = File(parameters.unnamed[0])
+        } else {
+            val chooser = DirectoryChooser()
+            chooser.let {
+                it.setTitle("Select Directory")
+            }
+            filePath = chooser.showDialog(stage)
+        }
+
+        initialize(filePath!!)
 
         val root = Group()
-        editView.setFocusTraversable(true);
+        editView.setFocusTraversable(true)
         editView.requestFocus()
-        editView.addEventFilter(KeyEvent.KEY_PRESSED, { event ->
-            run {
-
-                val shiftValue = if (event.isShiftDown) 1.0f else 5.0f
-
-                when {
-                    event.isShortcutDown -> editView.mode = EditView.Mode.Shrink
-                    event.isAltDown -> editView.mode = EditView.Mode.Expand
-                }
-
-                when {
-                    event.isShiftDown && event.code == KeyCode.ENTER -> {
-                        if (!editView.selectPrevRegion()) {
-                            prevPicture(reverse = true)
-                        }
-                    }
-                    event.code == KeyCode.ENTER -> {
-                        if (!editView.selectNextRegion()) {
-                            nextPicture()
-                        }
-                    }
-                    event.isShiftDown && event.code == KeyCode.TAB -> {
-                        editView.selectPrevRegion()
-                    }
-                    event.code == KeyCode.TAB -> {
-                        editView.selectNextRegion()
-                    }
-                    event.isShiftDown && event.code == KeyCode.D -> editView.deleteRegion()
-                    event.isShortcutDown && event.code == KeyCode.LEFT -> editView.expandToRight(-shiftValue)
-                    event.isShortcutDown && event.code == KeyCode.UP -> editView.expandToBottom(-shiftValue)
-                    event.isShortcutDown && event.code == KeyCode.RIGHT -> editView.expandToLeft(-shiftValue)
-                    event.isShortcutDown && event.code == KeyCode.DOWN -> editView.expandToTop(-shiftValue)
-                    event.isAltDown && event.code == KeyCode.LEFT -> editView.expandToLeft(shiftValue)
-                    event.isAltDown && event.code == KeyCode.UP -> editView.expandToTop(shiftValue)
-                    event.isAltDown && event.code == KeyCode.RIGHT -> editView.expandToRight(shiftValue)
-                    event.isAltDown && event.code == KeyCode.DOWN -> editView.expandToBottom(shiftValue)
-                    event.code == KeyCode.ESCAPE -> showResetDialog()
-                    event.code == KeyCode.LEFT -> editView.moveToLeft(shiftValue)
-                    event.code == KeyCode.UP -> editView.moveToTop(shiftValue)
-                    event.code == KeyCode.RIGHT -> editView.moveToRight(shiftValue)
-                    event.code == KeyCode.DOWN -> editView.moveToBottom(shiftValue)
-                    event.code == KeyCode.N -> editView.toggleFace()
-                    event.code == KeyCode.END -> nextPicture()
-                    event.code == KeyCode.HOME -> prevPicture()
-                }
-                editView.draw()
-            }
-        })
-        editView.addEventFilter(KeyEvent.KEY_RELEASED, { event ->
-            run {
-                when {
-                    event.isShortcutDown -> editView.mode = EditView.Mode.Shrink
-                    event.isAltDown -> editView.mode = EditView.Mode.Expand
-                    else -> editView.mode = EditView.Mode.Normal
-
-                }
-                editView.draw()
-            }
-        })
 
         root.children.add(editView)
         val scene = Scene(root, 1024.0, 768.0)
@@ -156,28 +122,26 @@ class Main : App() {
     private fun prevPicture(reverse: Boolean = false) {
         editView.save(jsonFile)
 
-        if (index == 0) {
+        if (file_index == 0) {
             return
         }
 
-        index--
-        val previousFile: File = File(baseDir, fileList[index])
+        file_index--
+        val previousFile: File = File(baseDir, fileList[file_index])
         loadFile(previousFile, reverse)
     }
 
     private fun nextPicture(reverse: Boolean = false) {
         editView.save(jsonFile)
 
-        if (index == fileList.size - 1) {
+        if (file_index == fileList.size - 1) {
             return
         }
 
-        index++
-        val nextFile: File = File(baseDir, fileList[index])
+        file_index++
+        val nextFile: File = File(baseDir, fileList[file_index])
         loadFile(nextFile, reverse)
     }
-
-    var jsonFile: File? = null
 
     private fun loadFile(file: File, reverse: Boolean = false) {
         jsonFile = file
@@ -186,5 +150,7 @@ class Main : App() {
         val imageData: Image = Image(imageFile.toURI().toString())
 
         editView.setData(imageData, candidateList, reverse)
+
+        stage.title = String.format("%s - %d/%d", imageFile.name, (file_index + 1), fileList.size)
     }
 }
