@@ -6,6 +6,9 @@ import javafx.application.Application
 import javafx.beans.value.ObservableValue
 import javafx.scene.Group
 import javafx.scene.Scene
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button
+import javafx.scene.control.ButtonType
 import javafx.scene.image.Image
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent
@@ -85,6 +88,7 @@ class Main : App() {
                     event.isAltDown && event.code == KeyCode.UP -> editView.expandToTop(shiftValue)
                     event.isAltDown && event.code == KeyCode.RIGHT -> editView.expandToRight(shiftValue)
                     event.isAltDown && event.code == KeyCode.DOWN -> editView.expandToBottom(shiftValue)
+                    event.code == KeyCode.ESCAPE -> showResetDialog()
                     event.code == KeyCode.LEFT -> editView.moveToLeft(shiftValue)
                     event.code == KeyCode.UP -> editView.moveToTop(shiftValue)
                     event.code == KeyCode.RIGHT -> editView.moveToRight(shiftValue)
@@ -130,6 +134,23 @@ class Main : App() {
 
         stage.setScene(scene)
         stage.show()
+    }
+
+    private fun showResetDialog() {
+        Alert(Alert.AlertType.CONFIRMATION).let {
+            it.setContentText("編集内容をリセットしてよろしいですか？")
+            it.setHeaderText(null)
+
+            val okButton: Button = it.dialogPane.lookupButton(ButtonType.OK) as Button
+            okButton.isDefaultButton = false
+
+            val cancelButton: Button = it.dialogPane.lookupButton(ButtonType.CANCEL) as Button
+            cancelButton.isDefaultButton = true
+
+            if (it.showAndWait().get() === ButtonType.OK) {
+                editView.reset()
+            }
+        }
     }
 
     private fun prevPicture(reverse: Boolean = false) {

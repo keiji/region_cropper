@@ -87,24 +87,7 @@ class EditView() : Canvas() {
         imageData = image
         this.candidateList = candidateList
 
-        if (this.candidateList.faces == null) {
-            this.candidateList.faces = ArrayList<CandidateList.Region>()
-
-            for (c: CandidateList.Region in candidateList.detectedFaces.regions) {
-                val candidate: CandidateList.Region = CandidateList.Region(0.0, c.isFace, c.rect.copy())
-                this.candidateList.faces!!.add(candidate)
-            }
-        }
-
-        Collections.sort(candidateList.faces, PositionComparator())
-
-        if (candidateList.faces!!.size == 0) {
-            selectedIndex = -1
-            return
-        }
-
-        selectedIndex = if (!reverse) 0 else (this.candidateList.faces!!.size - 1)
-        selectedCandidate = this.candidateList.faces!![selectedIndex]
+        reset(reverse)
 
         onResize()
     }
@@ -310,5 +293,28 @@ class EditView() : Canvas() {
 
     fun toggleFace() {
         selectedCandidate.isFace = !selectedCandidate.isFace
+    }
+
+    fun reset(reverse: Boolean = false) {
+        if (candidateList.faces == null) {
+            candidateList.faces = ArrayList<CandidateList.Region>()
+        } else {
+            candidateList.faces!!.clear()
+        }
+
+        for (c: CandidateList.Region in candidateList.detectedFaces.regions) {
+            val candidate: CandidateList.Region = CandidateList.Region(0.0, c.isFace, c.rect.copy())
+            this.candidateList.faces!!.add(candidate)
+        }
+
+        Collections.sort(candidateList.faces, PositionComparator())
+
+        if (candidateList.faces!!.size == 0) {
+            selectedIndex = -1
+            return
+        }
+
+        selectedIndex = if (!reverse) 0 else (this.candidateList.faces!!.size - 1)
+        selectedCandidate = this.candidateList.faces!![selectedIndex]
     }
 }
