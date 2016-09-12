@@ -3,6 +3,7 @@ package io.keiji.region_cropper.view
 import io.keiji.region_cropper.entity.PositionComparator
 import io.keiji.region_cropper.entity.CandidateList
 import javafx.scene.canvas.Canvas
+import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
@@ -10,21 +11,11 @@ import javafx.scene.paint.Color
 import java.io.File
 import java.util.*
 
-private val BLUE = Color(0.0, 0.0, 1.0, 1.0).let {
-    it.darker()
-}
+private val FACE = Color(0.0, 0.0, 1.0, 1.0)
+private val FACE_SELECTED = Color(1.0, 0.0, 0.0, 1.0)
 
-private val BLACK = Color(0.0, 0.0, 0.0, 1.0).let {
-    it.brighter()
-}
-
-private val GRAY = Color(0.3, 0.3, 0.3, 1.0).let {
-    it.brighter()
-}
-
-private val RED = Color(1.0, 0.0, 0.0, 1.0).let {
-    it.darker()
-}
+private val NOT_FACE = Color(0.0, 0.0, 0.0, 1.0)
+private val NOT_FACE_SELECTED = Color(0.3, 0.3, 0.3, 1.0)
 
 private val NOT_SELECTED = CandidateList.Region(
         -1.0, false,
@@ -35,6 +26,14 @@ private data class Point(var x: Double, var y: Double) {
 
 class EditView() : Canvas() {
 
+    enum class Mode {
+        Normal,
+        Expand,
+        Shrink,
+    }
+
+    var mode: Mode = Mode.Normal
+
     lateinit var imageData: Image
     lateinit var candidateList: CandidateList
 
@@ -43,10 +42,17 @@ class EditView() : Canvas() {
 
     private var reticle: Point = Point(0.0, 0.0)
 
+    private val keyLeftImage: Image
     private val keyUpImage: Image
+    private val keyRightImage: Image
+    private val keyDownImage: Image
 
     init {
-        keyUpImage = Image(javaClass.getClassLoader().getResourceAsStream("ic_keyboard_arrow_up_black_36dp.png"));
+        val cl = javaClass.getClassLoader()
+        keyLeftImage = Image(cl.getResourceAsStream("ic_keyboard_arrow_left_red.png"));
+        keyUpImage = Image(cl.getResourceAsStream("ic_keyboard_arrow_up_red.png"));
+        keyRightImage = Image(cl.getResourceAsStream("ic_keyboard_arrow_right_red.png"));
+        keyDownImage = Image(cl.getResourceAsStream("ic_keyboard_arrow_down_red.png"));
 
         addEventFilter(MouseEvent.ANY, { event ->
             run {
@@ -132,29 +138,63 @@ class EditView() : Canvas() {
         gc.lineWidth = 2.0
 
         for (c: CandidateList.Region in candidateList.faces!!) {
-
-            when {
-                !c.isFace && selectedCandidate == c -> gc.stroke = GRAY
-                selectedCandidate == c -> gc.stroke = BLUE
-                !c.isFace -> gc.stroke = BLACK
-                else -> gc.stroke = RED
+            if (c != selectedCandidate) {
+                drawRegion(c, gc, false)
             }
-
-            val rect = c.rect
-            gc.strokeRect(
-                    rect.left * scale,
-                    rect.top * scale,
-                    rect.width() * scale,
-                    rect.height() * scale
-            )
         }
 
-//        gc.fillOval(
-//                reticle.x * scale,
-//                reticle.y * scale,
-//                10.0, 10.0)
+        drawRegion(selectedCandidate, gc, true)
 
         gc.restore()
+    }
+
+    private val margin: Double = 2.0
+
+    private fun drawRegion(c: CandidateList.Region, gc: GraphicsContext, isSelected: Boolean) {
+        val rect: CandidateList.Region.Rect = c.rect
+
+        when {
+            !c.isFace && selectedCandidate == c -> gc.stroke = NOT_FACE_SELECTED
+            selectedCandidate == c -> gc.stroke = FACE_SELECTED
+            !c.isFace -> gc.stroke = NOT_FACE
+            else -> gc.stroke = FACE
+        }
+
+        gc.strokeRect(
+                rect.left * scale,
+                rect.top * scale,
+                rect.width() * scale,
+                rect.height() * scale
+        )
+
+        if (!isSelected) {
+            return
+        }
+
+        val horizontalCenter = (rect.left + rect.width() / 2) * scale - keyUpImage.width / 2
+        val verticalCenter = (rect.top + rect.height() / 2) * scale - keyLeftImage.height / 2
+
+        val topY = (rect.top - margin) * scale - keyUpImage.height
+        val bottomY = (rect.bottom + margin) * scale
+        val leftX = (rect.left - margin) * scale - keyLeftImage.width
+        val rightX = (rect.right + margin) * scale
+
+        when (mode) {
+            Mode.Expand -> {
+                gc.drawImage(keyUpImage, horizontalCenter, topY)
+                gc.drawImage(keyDownImage, horizontalCenter, bottomY)
+                gc.drawImage(keyLeftImage, leftX, verticalCenter)
+                gc.drawImage(keyRightImage, rightX, verticalCenter)
+            }
+            Mode.Shrink -> {
+                gc.drawImage(keyDownImage, horizontalCenter, topY)
+                gc.drawImage(keyUpImage, horizontalCenter, bottomY)
+                gc.drawImage(keyRightImage, leftX, verticalCenter)
+                gc.drawImage(keyLeftImage, rightX, verticalCenter)
+            }
+            else -> {
+            }
+        }
     }
 
     fun selectNextRegion(): Boolean {
