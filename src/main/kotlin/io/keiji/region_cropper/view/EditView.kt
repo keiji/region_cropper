@@ -46,7 +46,7 @@ class EditView(val callback: Callback) : Canvas() {
     lateinit var imageData: Image
     lateinit var candidateList: CandidateList
 
-    lateinit var selectedCandidate: CandidateList.Region
+    var selectedCandidate: CandidateList.Region = NOT_SELECTED
     private var selectedIndex: Int = 0
 
     private var reticle: Point = Point(0.0, 0.0)
