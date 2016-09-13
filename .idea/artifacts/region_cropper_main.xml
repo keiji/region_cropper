@@ -1,0 +1,28 @@
+<component name="ArtifactManager">
+  <artifact type="javafx" name="region_cropper_main">
+    <output-path>$PROJECT_DIR$/out/artifacts/region_cropper_main</output-path>
+    <properties id="javafx-properties">
+      <options>
+        <option name="appClass" value="io.keiji.region_cropper.Main" />
+        <option name="description" value="" />
+        <option name="htmlPlaceholderId" value="" />
+        <option name="title" value="" />
+        <option name="vendor" value="" />
+        <option name="version" value="" />
+      </options>
+    </properties>
+    <root id="root">
+      <element id="archive" name="region_cropper_main.jar">
+        <element id="module-output" name="region_cropper_main" />
+        <element id="dir-copy" path="$PROJECT_DIR$/src/main/resources" />
+      </element>
+      <element id="library" level="project" name="Gradle: no.tornado:tornadofx:1.5.5" />
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-runtime:1.0.3" />
+      <element id="library" level="project" name="Gradle: org.glassfish:javax.json:1.0.4" />
+      <element id="library" level="project" name="Gradle: com.google.code.gson:gson:2.3.1" />
+      <element id="library" level="project" name="Gradle: junit:junit:4.4" />
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-reflect:1.0.3" />
+      <element id="library" level="project" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib:1.0.3" />
+    </root>
+  </artifact>
+</component>

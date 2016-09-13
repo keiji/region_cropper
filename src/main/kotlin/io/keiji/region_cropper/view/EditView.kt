@@ -78,7 +78,10 @@ class EditView(val callback: Callback) : Canvas() {
                 when {
                     event.code == KeyCode.SPACE -> showReticle = true
                     event.isShortcutDown -> mode = Mode.Shrink
-                    event.isAltDown -> mode = Mode.Expand
+                    event.isAltDown -> {
+                        mode = Mode.Expand
+                        event.consume()
+                    }
                 }
 
                 when {
