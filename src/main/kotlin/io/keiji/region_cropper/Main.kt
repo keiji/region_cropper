@@ -4,18 +4,25 @@ import io.keiji.region_cropper.entity.CandidateList
 import io.keiji.region_cropper.view.EditView
 import javafx.application.Application
 import javafx.beans.value.ObservableValue
-import javafx.scene.Group
+import javafx.event.ActionEvent
+import javafx.event.EventHandler
+import javafx.fxml.FXMLLoader
 import javafx.scene.Scene
-import javafx.scene.control.Alert
-import javafx.scene.control.Button
-import javafx.scene.control.ButtonType
+import javafx.scene.control.*
 import javafx.scene.image.Image
+import javafx.scene.layout.BorderPane
+import javafx.scene.layout.GridPane
+import javafx.scene.layout.Priority
 import javafx.stage.DirectoryChooser
 import javafx.stage.Stage
-import tornadofx.App
+import tornadofx.*
 import java.io.File
+import java.nio.charset.Charset
 
 class Main : App() {
+
+    val LICENSE_FILE_NAME = "licenses.txt"
+
     var file_index: Int = 0
     private lateinit var stage: Stage
     private lateinit var fileList: List<String>
@@ -65,41 +72,136 @@ class Main : App() {
         if (parameters.unnamed.size > 0) {
             filePath = File(parameters.unnamed[0])
         } else {
-            val chooser = DirectoryChooser()
-            chooser.let {
-                it.setTitle("Select Directory")
-            }
-            filePath = chooser.showDialog(stage)
+            filePath = showDirectoryChooser()
         }
 
-        initialize(filePath!!)
+        if (filePath == null) {
+            stage.close()
+            return
+        }
 
-        val root = Group()
+        initialize(file = filePath)
+
+        val root: BorderPane = FXMLLoader.load(javaClass.classLoader.getResource("main.fxml"));
+        val menuBar: MenuBar = root.lookup("#menuBar") as MenuBar
+
+        initMenu(menuBar, stage)
+
+        root.center = editView
+
         editView.setFocusTraversable(true)
         editView.requestFocus()
 
-        root.children.add(editView)
+        setResizeListeners(menuBar, root)
+
         val scene = Scene(root, 1024.0, 768.0)
-
-        stage.widthProperty().addListener(
-                {
-                    observableValue: ObservableValue<out Number>, oldValue: Number, newValue: Number ->
-                    run {
-                        editView.width = newValue.toDouble()
-                        editView.onResize()
-                    }
-                })
-        stage.heightProperty().addListener(
-                {
-                    observableValue: ObservableValue<out Number>, oldValue: Number, newValue: Number ->
-                    run {
-                        editView.height = newValue.toDouble()
-                        editView.onResize()
-                    }
-                })
-
         stage.setScene(scene)
         stage.show()
+    }
+
+    private fun setResizeListeners(menuBar: MenuBar, root: BorderPane) {
+        /*
+         * canvasのリサイズを検知できない課題がある
+         * また、VBoxなどを設置した場合はリサイズ時に縮小イベントをキャッチしない課題がある
+         */
+        root.widthProperty().addListener(
+                {
+                    observableValue: ObservableValue<out Number>, oldValue: Number, newValue: Number ->
+                    run {
+                        editView.width = root.width
+                        editView.onResize()
+                    }
+                })
+        root.heightProperty().addListener(
+                {
+                    observableValue: ObservableValue<out Number>, oldValue: Number, newValue: Number ->
+                    run {
+                        editView.height = root.height - menuBar.height
+                        editView.onResize()
+                    }
+                })
+    }
+
+    private fun initMenu(menuBar: MenuBar, stage: Stage) {
+        // File
+        menuBar.menus[0].let {
+            // Open Directory
+            it.items[0].onAction = EventHandler<ActionEvent> {
+                val filePath = showDirectoryChooser()
+                if (filePath != null) {
+                    initialize(filePath)
+                }
+            }
+
+            // Separator
+
+            // Quit
+            it.items[2].onAction = EventHandler<ActionEvent> {
+                stage.close()
+            }
+        }
+
+        // Help
+        menuBar.menus[1].let {
+
+            // Licenses
+            it.items[0].onAction = EventHandler<ActionEvent> {
+                showLicensesDialog()
+            }
+
+            // Separator
+
+            // About
+            it.items[2].onAction = EventHandler<ActionEvent> {
+                showAboutDialog()
+            }
+        }
+    }
+
+    private fun showLicensesDialog() {
+        val alert = Alert(Alert.AlertType.INFORMATION)
+        alert.title = "オープンソースライセンス"
+        alert.headerText = null
+        alert.contentText = null
+
+        val text: String = javaClass.classLoader.getResourceAsStream(LICENSE_FILE_NAME)
+                .reader(Charset.forName("UTF-8"))
+                .readText()
+
+        val textArea = TextArea(text)
+        textArea.isEditable = false
+        textArea.isWrapText = true
+
+        textArea.maxWidth = java.lang.Double.MAX_VALUE
+        textArea.maxHeight = java.lang.Double.MAX_VALUE
+        GridPane.setVgrow(textArea, Priority.ALWAYS)
+        GridPane.setHgrow(textArea, Priority.ALWAYS)
+
+        val expContent = GridPane()
+        expContent.setMaxWidth(java.lang.Double.MAX_VALUE)
+        expContent.add(textArea, 0, 0)
+
+        alert.dialogPane.content = expContent
+
+        alert.show()
+    }
+
+    private fun showAboutDialog() {
+        val alert = Alert(Alert.AlertType.INFORMATION)
+        alert.title = "About"
+        alert.headerText = null
+        alert.contentText = "Megane Co - RegionCropper\n" +
+                "Copyright Keiji Ariyama 2016"
+
+        alert.showAndWait()
+    }
+
+    private fun showDirectoryChooser(): File? {
+        val chooser = DirectoryChooser()
+        chooser.let {
+            it.setTitle("Select Directory")
+        }
+        return chooser.showDialog(stage)
     }
 
     private fun showResetDialog() {

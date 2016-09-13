@@ -57,7 +57,7 @@ class EditView(val callback: Callback) : Canvas() {
     private val keyDownImage: Image
 
     init {
-        val cl = javaClass.getClassLoader()
+        val cl = javaClass.classLoader
         keyLeftImage = Image(cl.getResourceAsStream("ic_keyboard_arrow_left_red.png"));
         keyUpImage = Image(cl.getResourceAsStream("ic_keyboard_arrow_up_red.png"));
         keyRightImage = Image(cl.getResourceAsStream("ic_keyboard_arrow_right_red.png"));
@@ -170,7 +170,7 @@ class EditView(val callback: Callback) : Canvas() {
         scale = Math.min(scaleHorizontal, scaleVertical)
 
         paddingHorizontal = (width - (imageData.width * scale)) / 2
-        paddingVertical = (height - 24 /* タイトルバーのサイズ */ - ((imageData.height) * scale)) / 2
+        paddingVertical = (height - (imageData.height * scale)) / 2
 
         draw()
     }
