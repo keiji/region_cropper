@@ -4,32 +4,40 @@ import io.keiji.region_cropper.entity.CandidateList
 import io.keiji.region_cropper.view.EditView
 import javafx.application.Application
 import javafx.beans.value.ObservableValue
+import javafx.embed.swing.SwingFXUtils
 import javafx.event.ActionEvent
 import javafx.event.EventHandler
 import javafx.fxml.FXMLLoader
 import javafx.scene.Scene
 import javafx.scene.control.*
 import javafx.scene.image.Image
+import javafx.scene.image.WritableImage
 import javafx.scene.layout.BorderPane
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.Priority
 import javafx.stage.DirectoryChooser
 import javafx.stage.Stage
-import tornadofx.*
+import tornadofx.App
 import java.io.File
 import java.nio.charset.Charset
 import java.text.SimpleDateFormat
 import java.util.*
+import javax.imageio.ImageIO
+
+const val LICENSE_FILE_NAME = "licenses.txt"
 
 class Main : App() {
 
-    val LICENSE_FILE_NAME = "licenses.txt"
-
-    var file_index: Int = 0
     private lateinit var stage: Stage
     private lateinit var fileList: List<String>
+    private var fileIndex: Int = 0
+
+    private lateinit var fileName: String
     private lateinit var baseDir: File
     private lateinit var jsonFile: File
+
+    private lateinit var imageData: Image
+    private lateinit var candidateList: CandidateList
 
     private val editViewCallback = object : EditView.Callback {
         override fun onNextFile(reverse: Boolean) {
@@ -58,10 +66,10 @@ class Main : App() {
                 })
 
         if (filePath.isDirectory) {
-            filePath = File(baseDir, fileList[file_index])
+            filePath = File(baseDir, fileList[fileIndex])
         } else {
-            file_index = fileList.indexOf(filePath.name)
-            print(file_index)
+            fileIndex = fileList.indexOf(filePath.name)
+            print(fileIndex)
         }
 
         loadFile(filePath)
@@ -146,8 +154,24 @@ class Main : App() {
             }
         }
 
-        // Help
+        // Crop
         menuBar.menus[1].let {
+            // Crop Immediately
+            it.items[0].onAction = EventHandler<ActionEvent> {
+                cropTo(baseDir)
+            }
+
+            // Crop to
+            it.items[1].onAction = EventHandler<ActionEvent> {
+                val filePath = showDirectoryChooser()
+                if (filePath != null) {
+                    cropTo(filePath)
+                }
+            }
+        }
+
+        // Help
+        menuBar.menus[2].let {
 
             // Licenses
             it.items[0].onAction = EventHandler<ActionEvent> {
@@ -163,9 +187,34 @@ class Main : App() {
         }
     }
 
+    private fun cropTo(path: File) {
+        if (candidateList.faces == null) {
+            return
+        }
+
+        val filePath: File
+        if (path.isDirectory) {
+            filePath = path
+        } else {
+            filePath = path.parentFile
+        }
+
+        var index: Int = 0
+        for (region: CandidateList.Region in candidateList.faces!!) {
+            val rect = region.rect
+            val writableImage = WritableImage(imageData.pixelReader,
+                    rect.left.toInt(), rect.top.toInt(),
+                    rect.width().toInt(), rect.height().toInt())
+            val file = File(filePath, String.format("%s-%d.png", fileName, index))
+            ImageIO.write(SwingFXUtils.fromFXImage(writableImage, null), "png", file);
+            index++
+        }
+
+    }
+
     private fun showLicensesDialog() {
         val alert = Alert(Alert.AlertType.INFORMATION)
-        alert.title = "オープンソースライセンス"
+        alert.title = "Open Source Licenses"
         alert.headerText = null
         alert.contentText = null
 
@@ -194,9 +243,8 @@ class Main : App() {
     private fun showAboutDialog() {
         val alert = Alert(Alert.AlertType.INFORMATION)
         alert.title = "About"
-        alert.headerText = null
-        alert.contentText = "Megane Co - RegionCropper\n" +
-                "Copyright Keiji Ariyama 2016"
+        alert.headerText = "RegionCropper (Megane Co)"
+        alert.contentText = "Copyright 2016 Keiji Ariyama"
 
         alert.showAndWait()
     }
@@ -211,7 +259,7 @@ class Main : App() {
 
     private fun showResetDialog() {
         Alert(Alert.AlertType.CONFIRMATION).let {
-            it.setContentText("編集内容をリセットしてよろしいですか？")
+            it.setContentText("Discard changes?")
             it.setHeaderText(null)
 
             val okButton: Button = it.dialogPane.lookupButton(ButtonType.OK) as Button
@@ -229,44 +277,43 @@ class Main : App() {
     private fun prevPicture(reverse: Boolean = false) {
         editView.save(jsonFile)
 
-        if (file_index == 0) {
+        if (fileIndex == 0) {
             return
         }
 
-        file_index--
-        val previousFile: File = File(baseDir, fileList[file_index])
+        fileIndex--
+        val previousFile: File = File(baseDir, fileList[fileIndex])
         loadFile(previousFile, reverse)
     }
 
     private fun nextPicture(reverse: Boolean = false) {
         editView.save(jsonFile)
 
-        if (file_index == fileList.size - 1) {
+        if (fileIndex == fileList.size - 1) {
             return
         }
 
-        file_index++
-        val nextFile: File = File(baseDir, fileList[file_index])
+        fileIndex++
+        val nextFile: File = File(baseDir, fileList[fileIndex])
         loadFile(nextFile, reverse)
     }
 
     private fun loadFile(imageFile: File, reverse: Boolean = false) {
         val nameAndExtension: List<String> = imageFile.name.split(".")
-        val name = nameAndExtension[0]
+        fileName = nameAndExtension[0]
 
-        jsonFile = File(baseDir, String.format("%s.json", name))
-        val candidateList: CandidateList
+        jsonFile = File(baseDir, String.format("%s.json", fileName))
         if (jsonFile.exists()) {
             candidateList = CandidateList.getInstance(jsonFile.absolutePath)
         } else {
             candidateList = CandidateList("Region Cropper", imageFile.name, null, ArrayList<CandidateList.Region>(), createdAt())
         }
 
-        val imageData: Image = Image(imageFile.toURI().toString())
+        imageData = Image(imageFile.toURI().toString())
 
         editView.setData(imageData, candidateList, reverse)
 
-        stage.title = String.format("%s - %d/%d", imageFile.name, (file_index + 1), fileList.size)
+        stage.title = String.format("%s - %d/%d", imageFile.name, (fileIndex + 1), fileList.size)
     }
 
     private fun createdAt(): String {
