@@ -89,17 +89,18 @@ class Main : App() {
 
         root.center = editView
 
+        editView.paddingTop = menuBar.height
         editView.setFocusTraversable(true)
         editView.requestFocus()
 
-        setResizeListeners(menuBar, root)
+        setResizeListeners(root)
 
         val scene = Scene(root, 1024.0, 768.0)
         stage.setScene(scene)
         stage.show()
     }
 
-    private fun setResizeListeners(menuBar: MenuBar, root: BorderPane) {
+    private fun setResizeListeners(root: BorderPane) {
         /*
          * canvasのリサイズを検知できない課題がある
          * また、VBoxなどを設置した場合はリサイズ時に縮小イベントをキャッチしない課題がある
@@ -116,7 +117,7 @@ class Main : App() {
                 {
                     observableValue: ObservableValue<out Number>, oldValue: Number, newValue: Number ->
                     run {
-                        editView.height = root.height - menuBar.height
+                        editView.height = root.height
                         editView.onResize()
                     }
                 })

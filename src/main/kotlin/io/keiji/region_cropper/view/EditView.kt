@@ -19,6 +19,8 @@ private val FACE_SELECTED = Color(1.0, 0.0, 0.0, 1.0)
 private val NOT_FACE = Color(0.0, 0.0, 0.0, 1.0)
 private val NOT_FACE_SELECTED = Color(0.3, 0.3, 0.3, 1.0)
 
+private val DRAGGING = Color(1.0, 1.0, 0.0, 1.0)
+
 private val NOT_SELECTED = CandidateList.Region(
         -1.0, false,
         CandidateList.Region.Rect(0.0f, 0.0f, 0.0f, 0.0f))
@@ -43,6 +45,8 @@ class EditView(val callback: Callback) : Canvas() {
     var mode: Mode = Mode.Normal
     var showReticle: Boolean = false
 
+    var draggingRect: CandidateList.Region.Rect? = null
+
     lateinit var imageData: Image
     lateinit var candidateList: CandidateList
 
@@ -50,11 +54,14 @@ class EditView(val callback: Callback) : Canvas() {
     private var selectedIndex: Int = 0
 
     private var reticle: Point = Point(0.0, 0.0)
+    var paddingTop: Double = 0.0
 
     private val keyLeftImage: Image
     private val keyUpImage: Image
     private val keyRightImage: Image
     private val keyDownImage: Image
+
+    private val tempPoint = Point(0.0, 0.0)
 
     init {
         val cl = javaClass.classLoader
@@ -121,7 +128,6 @@ class EditView(val callback: Callback) : Canvas() {
                     event.isShortcutDown -> mode = Mode.Shrink
                     event.isAltDown -> mode = Mode.Expand
                     else -> mode = Mode.Normal
-
                 }
                 draw()
             }
@@ -129,11 +135,24 @@ class EditView(val callback: Callback) : Canvas() {
 
         addEventFilter(MouseEvent.ANY, { event ->
             run {
+                convertLogicalPoint(event.x, event.y, tempPoint)
                 when {
-                    event.button == MouseButton.PRIMARY && event.eventType == MouseEvent.MOUSE_CLICKED -> {
-                        val point = Point(0.0, 0.0)
-                        convertLogicalPoint(event.sceneX, event.sceneY, point)
-                        addRegion(point.x.toFloat(), point.y.toFloat())
+                    event.button == MouseButton.PRIMARY && event.eventType == MouseEvent.MOUSE_DRAGGED -> {
+                        if (draggingRect == null) {
+                            draggingRect = CandidateList.Region.Rect(tempPoint.x.toFloat(),
+                                    tempPoint.y.toFloat(),
+                                    tempPoint.x.toFloat(),
+                                    tempPoint.y.toFloat())
+                        }
+
+                        draggingRect!!.right = tempPoint.x.toFloat()
+                        draggingRect!!.bottom = tempPoint.y.toFloat()
+                    }
+                    event.button == MouseButton.PRIMARY && event.eventType == MouseEvent.MOUSE_RELEASED -> {
+                        if (draggingRect != null) {
+                            addRect(draggingRect!!)
+                            draggingRect = null
+                        }
                     }
                     else -> convertLogicalPoint(event.sceneX, event.sceneY, reticle)
                 }
@@ -170,7 +189,7 @@ class EditView(val callback: Callback) : Canvas() {
         scale = Math.min(scaleHorizontal, scaleVertical)
 
         paddingHorizontal = (width - (imageData.width * scale)) / 2
-        paddingVertical = (height - (imageData.height * scale)) / 2
+        paddingVertical = (height - ((imageData.height - paddingTop) * scale)) / 2
 
         draw()
     }
@@ -181,7 +200,7 @@ class EditView(val callback: Callback) : Canvas() {
 
         gc.save()
 
-        gc.translate(paddingHorizontal, paddingVertical)
+        gc.translate(paddingHorizontal, paddingTop + paddingVertical)
 
         gc.drawImage(imageData,
                 0.0,
@@ -192,9 +211,10 @@ class EditView(val callback: Callback) : Canvas() {
         gc.lineWidth = 1.0
 
         for (c: CandidateList.Region in candidateList.faces!!) {
-            if (c != selectedCandidate) {
-                drawRegion(c, gc, false)
+            if (c == selectedCandidate) {
+                continue
             }
+            drawRegion(c, gc, false)
         }
 
         drawRegion(selectedCandidate, gc, true)
@@ -215,7 +235,23 @@ class EditView(val callback: Callback) : Canvas() {
                     selectedCandidate.rect.centerY() * scale)
         }
 
+        drawDraggingRect(gc, draggingRect)
+
+//        gc.fillOval(tempPoint.x * scale, tempPoint.y * scale, 5.0, 5.0)
+
         gc.restore()
+    }
+
+    private fun drawDraggingRect(gc: GraphicsContext, draggingRect: CandidateList.Region.Rect?) {
+        if (draggingRect == null) {
+            return
+        }
+
+        gc.stroke = DRAGGING
+        gc.strokeRect(draggingRect.left.toDouble() * scale,
+                draggingRect.top.toDouble() * scale,
+                draggingRect.width().toDouble() * scale,
+                draggingRect.height().toDouble() * scale)
     }
 
     private val margin: Double = 2.0
@@ -371,6 +407,15 @@ class EditView(val callback: Callback) : Canvas() {
 
     private val NEW_RECT_SIZE = 30
 
+    private fun addRect(rect: CandidateList.Region.Rect) {
+        selectedCandidate = CandidateList.Region(0.0, true, rect)
+        candidateList.faces!!.add(selectedCandidate)
+
+        Collections.sort(candidateList.faces!!, PositionComparator())
+
+        selectedIndex = candidateList.faces!!.indexOf(selectedCandidate)
+    }
+
     private fun addRegion(x: Float, y: Float) {
         val halfSize = NEW_RECT_SIZE / 2
         selectedCandidate = CandidateList.Region(0.0, true,
@@ -408,4 +453,5 @@ class EditView(val callback: Callback) : Canvas() {
         selectedIndex = if (!reverse) 0 else (this.candidateList.faces!!.size - 1)
         selectedCandidate = this.candidateList.faces!![selectedIndex]
     }
+
 }
