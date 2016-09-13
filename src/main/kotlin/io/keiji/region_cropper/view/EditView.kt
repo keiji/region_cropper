@@ -180,7 +180,26 @@ class EditView(val callback: Callback) : Canvas() {
         imageData = image
         this.candidateList = candidateList
 
-        reset(reverse)
+        if (candidateList.faces == null) {
+            candidateList.faces = ArrayList<CandidateList.Region>()
+
+            if (candidateList.detectedFaces != null) {
+                for (c: CandidateList.Region in candidateList.detectedFaces.regions) {
+                    val candidate: CandidateList.Region = CandidateList.Region(0.0, c.isFace, c.rect.copy())
+                    this.candidateList.faces!!.add(candidate)
+                }
+            }
+        }
+
+        Collections.sort(candidateList.faces, PositionComparator())
+
+        if (candidateList.faces!!.size == 0) {
+            selectedIndex = -1
+            selectedCandidate = NOT_SELECTED
+        } else {
+            selectedIndex = if (!reverse) 0 else (this.candidateList.faces!!.size - 1)
+            selectedCandidate = this.candidateList.faces!![selectedIndex]
+        }
 
         onResize()
     }
@@ -408,8 +427,6 @@ class EditView(val callback: Callback) : Canvas() {
         selectedCandidate = candidateList.faces!![selectedIndex]
     }
 
-    private val NEW_RECT_SIZE = 30
-
     private fun addRect(rect: CandidateList.Region.Rect) {
         selectedCandidate = CandidateList.Region(0.0, true, rect)
         candidateList.faces!!.add(selectedCandidate)
@@ -418,6 +435,8 @@ class EditView(val callback: Callback) : Canvas() {
 
         selectedIndex = candidateList.faces!!.indexOf(selectedCandidate)
     }
+
+    private val NEW_RECT_SIZE = 30
 
     private fun addRegion(x: Float, y: Float) {
         val halfSize = NEW_RECT_SIZE / 2
@@ -441,15 +460,18 @@ class EditView(val callback: Callback) : Canvas() {
             candidateList.faces!!.clear()
         }
 
-        for (c: CandidateList.Region in candidateList.detectedFaces.regions) {
-            val candidate: CandidateList.Region = CandidateList.Region(0.0, c.isFace, c.rect.copy())
-            this.candidateList.faces!!.add(candidate)
+        if (candidateList.detectedFaces != null) {
+            for (c: CandidateList.Region in candidateList.detectedFaces!!.regions) {
+                val candidate: CandidateList.Region = CandidateList.Region(0.0, c.isFace, c.rect.copy())
+                this.candidateList.faces!!.add(candidate)
+            }
         }
 
         Collections.sort(candidateList.faces, PositionComparator())
 
         if (candidateList.faces!!.size == 0) {
             selectedIndex = -1
+            selectedCandidate = NOT_SELECTED
             return
         }
 

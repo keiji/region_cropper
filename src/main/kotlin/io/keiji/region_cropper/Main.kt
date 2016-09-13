@@ -18,6 +18,8 @@ import javafx.stage.Stage
 import tornadofx.*
 import java.io.File
 import java.nio.charset.Charset
+import java.text.SimpleDateFormat
+import java.util.*
 
 class Main : App() {
 
@@ -50,7 +52,9 @@ class Main : App() {
         baseDir = if (filePath.isDirectory) filePath else filePath.parentFile
         fileList = baseDir.list().filter(
                 {
-                    it.endsWith(".json")
+                    it.toLowerCase().endsWith(".png")
+                            || it.toLowerCase().endsWith(".jpg")
+                            || it.toLowerCase().endsWith(".jpeg")
                 })
 
         if (filePath.isDirectory) {
@@ -246,14 +250,29 @@ class Main : App() {
         loadFile(nextFile, reverse)
     }
 
-    private fun loadFile(file: File, reverse: Boolean = false) {
-        jsonFile = file
-        val candidateList = CandidateList.getInstance(file.absolutePath)
-        val imageFile: File = File(file.parent, candidateList.fileName)
+    private fun loadFile(imageFile: File, reverse: Boolean = false) {
+        val nameAndExtension: List<String> = imageFile.name.split(".")
+        val name = nameAndExtension[0]
+
+        jsonFile = File(baseDir, String.format("%s.json", name))
+        val candidateList: CandidateList
+        if (jsonFile.exists()) {
+            candidateList = CandidateList.getInstance(jsonFile.absolutePath)
+        } else {
+            candidateList = CandidateList("Region Cropper", imageFile.name, null, ArrayList<CandidateList.Region>(), createdAt())
+        }
+
         val imageData: Image = Image(imageFile.toURI().toString())
 
         editView.setData(imageData, candidateList, reverse)
 
         stage.title = String.format("%s - %d/%d", imageFile.name, (file_index + 1), fileList.size)
+    }
+
+    private fun createdAt(): String {
+        val tz = TimeZone.getTimeZone("UTC")
+        val df = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.S")
+        df.setTimeZone(tz)
+        return df.format(Date())
     }
 }

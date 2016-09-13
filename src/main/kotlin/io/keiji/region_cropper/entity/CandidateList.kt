@@ -40,7 +40,7 @@ data class CandidateList(
         val fileName: String,
 
         @SerializedName("detected_faces")
-        val detectedFaces: DetectedFaces,
+        val detectedFaces: DetectedFaces?,
 
         @SerializedName("faces")
         var faces: ArrayList<Region>?,
@@ -57,7 +57,6 @@ data class CandidateList(
 
     fun save(file: File?) {
         Collections.sort(faces, LikelihoodComparator())
-
         val gson = GsonBuilder().setPrettyPrinting().create();
         file!!.writeText(gson.toJson(this, CandidateList::class.java), Charset.forName("UTF-8"))
 
