@@ -33,8 +33,8 @@ class RegionListTest {
         assertEquals(7, candidateList!!.detectedFaces.regions.size)
 
         candidateList!!.detectedFaces.regions[0].let {
-            assertEquals(0.9999978542327881, it.likelihood, 0.0000000000000001)
-            assertEquals(true, it.isFace)
+            assertEquals(0.9999978542327881, it.probability, 0.0000000000000001)
+            assertEquals(true, it.label)
 
             it.rect.let {
                 assertEquals(216.0F, it.left)

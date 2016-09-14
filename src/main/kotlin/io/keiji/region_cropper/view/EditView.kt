@@ -15,16 +15,25 @@ import java.util.*
 
 const val MIN_REGION_SIZE = 10.0f
 
-private val FACE = Color(0.0, 0.0, 1.0, 1.0)
-private val FACE_SELECTED = Color(1.0, 0.0, 0.0, 1.0)
+private val SELECTED = Color(1.0, 0.0, 0.0, 1.0)
 
-private val NOT_FACE = Color(0.0, 0.0, 0.0, 1.0)
-private val NOT_FACE_SELECTED = Color(0.3, 0.3, 0.3, 1.0)
+private val regionColors: Array<Color> = arrayOf(
+        Color.BLACK,
+        Color.WHITE,
+        Color.GREEN,
+        Color.BLUE,
+        Color.BURLYWOOD,
+        Color.AZURE,
+        Color.ORANGE,
+        Color.PINK,
+        Color.LAVENDER,
+        Color.OLIVEDRAB
+)
 
-private val DRAGGING = Color(1.0, 1.0, 0.0, 1.0)
+private val DRAGGING = Color.YELLOW
 
 private val NOT_SELECTED = CandidateList.Region(
-        -1.0, false,
+        -1.0, 0,
         CandidateList.Region.Rect(0.0f, 0.0f, 0.0f, 0.0f))
 
 private data class Point(var x: Double, var y: Double) {
@@ -117,9 +126,18 @@ class EditView(val callback: Callback) : Canvas() {
                     event.code == KeyCode.UP -> moveToTop(shiftValue)
                     event.code == KeyCode.RIGHT -> moveToRight(shiftValue)
                     event.code == KeyCode.DOWN -> moveToBottom(shiftValue)
-                    event.code == KeyCode.N -> toggleFace()
                     event.code == KeyCode.END -> callback.onNextFile()
                     event.code == KeyCode.HOME -> callback.onPreviousFile()
+                    event.code == KeyCode.DIGIT0 -> setLabel(0)
+                    event.code == KeyCode.DIGIT1 -> setLabel(1)
+                    event.code == KeyCode.DIGIT2 -> setLabel(2)
+                    event.code == KeyCode.DIGIT3 -> setLabel(3)
+                    event.code == KeyCode.DIGIT4 -> setLabel(4)
+                    event.code == KeyCode.DIGIT5 -> setLabel(5)
+                    event.code == KeyCode.DIGIT6 -> setLabel(6)
+                    event.code == KeyCode.DIGIT7 -> setLabel(7)
+                    event.code == KeyCode.DIGIT8 -> setLabel(8)
+                    event.code == KeyCode.DIGIT9 -> setLabel(9)
                 }
                 draw()
             }
@@ -166,6 +184,14 @@ class EditView(val callback: Callback) : Canvas() {
         })
     }
 
+    private fun setLabel(label: Int) {
+        if (selectedCandidate === NOT_SELECTED) {
+            return
+        }
+
+        selectedCandidate.label = label
+    }
+
     var scale: Double = 1.0
     var paddingHorizontal: Double = 0.0
     var paddingVertical: Double = 0.0
@@ -182,25 +208,24 @@ class EditView(val callback: Callback) : Canvas() {
         imageData = image
         this.candidateList = candidateList
 
-        if (candidateList.faces == null) {
-            candidateList.faces = ArrayList<CandidateList.Region>()
+        if (candidateList.regions == null) {
+            candidateList.regions = ArrayList<CandidateList.Region>()
 
             if (candidateList.detectedFaces != null) {
                 for (c: CandidateList.Region in candidateList.detectedFaces.regions) {
-                    val candidate: CandidateList.Region = CandidateList.Region(0.0, c.isFace, c.rect.copy())
-                    this.candidateList.faces!!.add(candidate)
+                    this.candidateList.regions!!.add(c.copy())
                 }
             }
         }
 
-        Collections.sort(candidateList.faces, PositionComparator())
+        Collections.sort(candidateList.regions, PositionComparator())
 
-        if (candidateList.faces!!.size == 0) {
+        if (candidateList.regions!!.size == 0) {
             selectedIndex = -1
             selectedCandidate = NOT_SELECTED
         } else {
-            selectedIndex = if (!reverse) 0 else (this.candidateList.faces!!.size - 1)
-            selectedCandidate = this.candidateList.faces!![selectedIndex]
+            selectedIndex = if (!reverse) 0 else (this.candidateList.regions!!.size - 1)
+            selectedCandidate = this.candidateList.regions!![selectedIndex]
         }
 
         onResize()
@@ -233,7 +258,7 @@ class EditView(val callback: Callback) : Canvas() {
 
         gc.lineWidth = 1.0
 
-        for (c: CandidateList.Region in candidateList.faces!!) {
+        for (c: CandidateList.Region in candidateList.regions!!) {
             if (c == selectedCandidate) {
                 continue
             }
@@ -242,12 +267,9 @@ class EditView(val callback: Callback) : Canvas() {
 
         drawRegion(selectedCandidate, gc, true)
 
-        if (showReticle) {
-            when {
-                !selectedCandidate.isFace -> gc.stroke = NOT_FACE_SELECTED
-                else -> gc.stroke = FACE_SELECTED
-            }
+        if (showReticle && selectedCandidate !== NOT_SELECTED) {
 
+            gc.stroke = SELECTED
             gc.strokeLine(selectedCandidate.rect.centerX() * scale,
                     0.0,
                     selectedCandidate.rect.centerX() * scale,
@@ -280,15 +302,13 @@ class EditView(val callback: Callback) : Canvas() {
     private val margin: Double = 2.0
 
     private fun drawRegion(c: CandidateList.Region, gc: GraphicsContext, isSelected: Boolean) {
-        val rect: CandidateList.Region.Rect = c.rect
-
-        when {
-            !c.isFace && selectedCandidate == c -> gc.stroke = NOT_FACE_SELECTED
-            selectedCandidate == c -> gc.stroke = FACE_SELECTED
-            !c.isFace -> gc.stroke = NOT_FACE
-            else -> gc.stroke = FACE
+        if (selectedCandidate === NOT_SELECTED) {
+            return
         }
 
+        val rect: CandidateList.Region.Rect = c.rect
+
+        gc.stroke = regionColors[c.label]
         gc.strokeRect(
                 rect.left * scale,
                 rect.top * scale,
@@ -296,7 +316,19 @@ class EditView(val callback: Callback) : Canvas() {
                 rect.height() * scale
         )
 
-        if (!isSelected || !c.isFace) {
+        if (!isSelected) {
+            return
+        }
+
+        gc.stroke = SELECTED
+        gc.strokeRect(
+                (rect.left - 1) * scale,
+                (rect.top - 1) * scale,
+                (rect.width() + 2) * scale,
+                (rect.height() + 2) * scale
+        )
+
+        if (c.label == 0) {
             return
         }
 
@@ -327,13 +359,13 @@ class EditView(val callback: Callback) : Canvas() {
     }
 
     private fun selectNextRegion(): Boolean {
-        if (selectedIndex >= candidateList.faces!!.size - 1) {
+        if (selectedIndex >= candidateList.regions!!.size - 1) {
             return false
         } else {
             selectedIndex++
         }
 
-        selectedCandidate = candidateList.faces!![selectedIndex]
+        selectedCandidate = candidateList.regions!![selectedIndex]
         return true
     }
 
@@ -345,7 +377,7 @@ class EditView(val callback: Callback) : Canvas() {
             selectedIndex--
         }
 
-        selectedCandidate = candidateList.faces!![selectedIndex]
+        selectedCandidate = candidateList.regions!![selectedIndex]
         return true
     }
 
@@ -372,7 +404,7 @@ class EditView(val callback: Callback) : Canvas() {
     }
 
     private fun moveToLeft(size: Float) {
-        if (!selectedCandidate.isFace) {
+        if (selectedCandidate.label == 0) {
             return
         }
         selectedCandidate.rect.offset(-size, 0f)
@@ -380,7 +412,7 @@ class EditView(val callback: Callback) : Canvas() {
     }
 
     private fun moveToTop(size: Float) {
-        if (!selectedCandidate.isFace) {
+        if (selectedCandidate.label == 0) {
             return
         }
         selectedCandidate.rect.offset(0f, -size)
@@ -388,7 +420,7 @@ class EditView(val callback: Callback) : Canvas() {
     }
 
     private fun moveToRight(size: Float) {
-        if (!selectedCandidate.isFace) {
+        if (selectedCandidate.label == 0) {
             return
         }
         selectedCandidate.rect.offset(size, 0f)
@@ -396,7 +428,7 @@ class EditView(val callback: Callback) : Canvas() {
     }
 
     private fun moveToBottom(size: Float) {
-        if (!selectedCandidate.isFace) {
+        if (selectedCandidate.label == 0) {
             return
         }
         selectedCandidate.rect.offset(0f, size)
@@ -404,7 +436,7 @@ class EditView(val callback: Callback) : Canvas() {
     }
 
     private fun expandToLeft(size: Float) {
-        if (!selectedCandidate.isFace) {
+        if (selectedCandidate.label == 0) {
             return
         }
         selectedCandidate.rect.left -= size
@@ -412,7 +444,7 @@ class EditView(val callback: Callback) : Canvas() {
     }
 
     private fun expandToTop(size: Float) {
-        if (!selectedCandidate.isFace) {
+        if (selectedCandidate.label == 0) {
             return
         }
         selectedCandidate.rect.top -= size
@@ -420,7 +452,7 @@ class EditView(val callback: Callback) : Canvas() {
     }
 
     private fun expandToRight(size: Float) {
-        if (!selectedCandidate.isFace) {
+        if (selectedCandidate.label == 0) {
             return
         }
         selectedCandidate.rect.right += size
@@ -428,7 +460,7 @@ class EditView(val callback: Callback) : Canvas() {
     }
 
     private fun expandToBottom(size: Float) {
-        if (!selectedCandidate.isFace) {
+        if (selectedCandidate.label == 0) {
             return
         }
         selectedCandidate.rect.bottom += size
@@ -440,13 +472,13 @@ class EditView(val callback: Callback) : Canvas() {
     }
 
     private fun deleteRegion() {
-        if (!selectedCandidate.isFace) {
+        if (selectedCandidate.label == 0) {
             return
         }
 
-        candidateList.faces!!.remove(selectedCandidate)
+        candidateList.regions!!.remove(selectedCandidate)
 
-        if (selectedIndex > candidateList.faces!!.size - 1) {
+        if (selectedIndex > candidateList.regions!!.size - 1) {
             selectedIndex -= 1
         }
 
@@ -455,16 +487,16 @@ class EditView(val callback: Callback) : Canvas() {
             return
         }
 
-        selectedCandidate = candidateList.faces!![selectedIndex]
+        selectedCandidate = candidateList.regions!![selectedIndex]
     }
 
     private fun addRect(rect: CandidateList.Region.Rect) {
-        selectedCandidate = CandidateList.Region(0.0, true, rect)
-        candidateList.faces!!.add(selectedCandidate)
+        selectedCandidate = CandidateList.Region(1.0, 1, rect)
+        candidateList.regions!!.add(selectedCandidate)
 
-        Collections.sort(candidateList.faces!!, PositionComparator())
+        Collections.sort(candidateList.regions!!, PositionComparator())
 
-        selectedIndex = candidateList.faces!!.indexOf(selectedCandidate)
+        selectedIndex = candidateList.regions!!.indexOf(selectedCandidate)
         checkRect(selectedCandidate.rect)
     }
 
@@ -472,43 +504,43 @@ class EditView(val callback: Callback) : Canvas() {
 
     private fun addRegion(x: Float, y: Float) {
         val halfSize = NEW_RECT_SIZE / 2
-        selectedCandidate = CandidateList.Region(0.0, true,
+        selectedCandidate = CandidateList.Region(0.0, 1,
                 CandidateList.Region.Rect(x - halfSize, y - halfSize, x + halfSize, y + halfSize))
-        candidateList.faces!!.add(selectedCandidate)
+        candidateList.regions!!.add(selectedCandidate)
 
-        Collections.sort(candidateList.faces!!, PositionComparator())
+        Collections.sort(candidateList.regions!!, PositionComparator())
 
-        selectedIndex = candidateList.faces!!.indexOf(selectedCandidate)
+        selectedIndex = candidateList.regions!!.indexOf(selectedCandidate)
     }
 
     private fun toggleFace() {
-        selectedCandidate.isFace = !selectedCandidate.isFace
+        selectedCandidate.label = selectedCandidate.label
     }
 
     fun reset(reverse: Boolean = false) {
-        if (candidateList.faces == null) {
-            candidateList.faces = ArrayList<CandidateList.Region>()
+        if (candidateList.regions == null) {
+            candidateList.regions = ArrayList<CandidateList.Region>()
         } else {
-            candidateList.faces!!.clear()
+            candidateList.regions!!.clear()
         }
 
         if (candidateList.detectedFaces != null) {
             for (c: CandidateList.Region in candidateList.detectedFaces!!.regions) {
-                val candidate: CandidateList.Region = CandidateList.Region(0.0, c.isFace, c.rect.copy())
-                this.candidateList.faces!!.add(candidate)
+                val candidate: CandidateList.Region = CandidateList.Region(0.0, c.label, c.rect.copy())
+                this.candidateList.regions!!.add(candidate)
             }
         }
 
-        Collections.sort(candidateList.faces, PositionComparator())
+        Collections.sort(candidateList.regions, PositionComparator())
 
-        if (candidateList.faces!!.size == 0) {
+        if (candidateList.regions!!.size == 0) {
             selectedIndex = -1
             selectedCandidate = NOT_SELECTED
             return
         }
 
-        selectedIndex = if (!reverse) 0 else (this.candidateList.faces!!.size - 1)
-        selectedCandidate = this.candidateList.faces!![selectedIndex]
+        selectedIndex = if (!reverse) 0 else (this.candidateList.regions!!.size - 1)
+        selectedCandidate = this.candidateList.regions!![selectedIndex]
     }
 
 }

@@ -25,8 +25,8 @@ class PositionComparator : Comparator<CandidateList.Region> {
 class LikelihoodComparator : Comparator<CandidateList.Region> {
     override fun compare(obj1: CandidateList.Region, obj2: CandidateList.Region): Int {
         when {
-            obj1.likelihood > obj2.likelihood -> return 1
-            obj1.likelihood < obj2.likelihood -> return -1
+            obj1.probability > obj2.probability -> return 1
+            obj1.probability < obj2.probability -> return -1
             else -> return 0
         }
     }
@@ -42,8 +42,8 @@ data class CandidateList(
         @SerializedName("detected_faces")
         val detectedFaces: DetectedFaces?,
 
-        @SerializedName("faces")
-        var faces: ArrayList<Region>?,
+        @SerializedName("regions")
+        var regions: ArrayList<Region>?,
 
         @SerializedName("created_at")
         val createdAt: String
@@ -56,11 +56,11 @@ data class CandidateList(
     }
 
     fun save(file: File?) {
-        Collections.sort(faces, LikelihoodComparator())
+        Collections.sort(regions, LikelihoodComparator())
         val gson = GsonBuilder().setPrettyPrinting().create();
         file!!.writeText(gson.toJson(this, CandidateList::class.java), Charset.forName("UTF-8"))
 
-        Collections.sort(faces, PositionComparator())
+        Collections.sort(regions, PositionComparator())
     }
 
     data class DetectedFaces(
@@ -77,11 +77,11 @@ data class CandidateList(
     }
 
     data class Region(
-            @SerializedName("likelihood")
-            val likelihood: Double,
+            @SerializedName("probability")
+            val probability: Double,
 
-            @SerializedName("is_face")
-            var isFace: Boolean,
+            @SerializedName("label")
+            var label: Int,
 
             @SerializedName("rect")
             val rect: Rect

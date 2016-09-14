@@ -195,7 +195,7 @@ class Main : App() {
     }
 
     private fun cropTo(path: File) {
-        if (candidateList.faces == null) {
+        if (candidateList.regions == null) {
             return
         }
 
@@ -209,7 +209,7 @@ class Main : App() {
         }
 
         var index: Int = 0
-        for (region: CandidateList.Region in candidateList.faces!!) {
+        for (region: CandidateList.Region in candidateList.regions!!) {
             val rect = region.rect
             val writableImage = WritableImage(imageData.pixelReader,
                     rect.left.toInt(), rect.top.toInt(),
