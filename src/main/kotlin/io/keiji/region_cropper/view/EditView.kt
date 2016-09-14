@@ -103,12 +103,12 @@ class EditView(val callback: Callback) : Canvas() {
                 val shiftValue = if (event.isShiftDown) 1.0f else 5.0f
 
                 when {
-                    event.code == KeyCode.SPACE -> showReticle = true
-                    event.isShortcutDown -> mode = Mode.Shrink
                     event.isAltDown -> {
                         mode = Mode.Expand
                         event.consume()
                     }
+                    event.isShortcutDown -> mode = Mode.Shrink
+                    event.code == KeyCode.SPACE -> showReticle = true
                 }
 
                 when {
