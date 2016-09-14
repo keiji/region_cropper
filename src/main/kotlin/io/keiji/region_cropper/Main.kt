@@ -72,7 +72,6 @@ class Main : App() {
             filePath = File(baseDir, fileList[fileIndex])
         } else {
             fileIndex = fileList.indexOf(filePath.name)
-            print(fileIndex)
         }
 
         loadFile(filePath)
@@ -210,11 +209,15 @@ class Main : App() {
 
         var index: Int = 0
         for (region: CandidateList.Region in candidateList.regions!!) {
+            val filePathWithLabel = File(filePath,
+                    String.format("label_%d", region.label))
+            filePathWithLabel.mkdirs()
+
             val rect = region.rect
             val writableImage = WritableImage(imageData.pixelReader,
                     rect.left.toInt(), rect.top.toInt(),
                     rect.width().toInt(), rect.height().toInt())
-            val file = File(filePath, String.format("%s-%d.png", fileName, index))
+            val file = File(filePathWithLabel, String.format("%s-%d.png", fileName, index))
             ImageIO.write(SwingFXUtils.fromFXImage(writableImage, null), "png", file);
             index++
         }

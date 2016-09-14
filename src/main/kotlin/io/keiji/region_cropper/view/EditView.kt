@@ -19,15 +19,15 @@ private val SELECTED = Color(1.0, 0.0, 0.0, 1.0)
 
 private val regionColors: Array<Color> = arrayOf(
         Color.BLACK,
-        Color.WHITE,
-        Color.GREEN,
+        Color.LIGHTGREEN,
         Color.BLUE,
         Color.BURLYWOOD,
         Color.AZURE,
         Color.ORANGE,
         Color.PINK,
-        Color.LAVENDER,
-        Color.OLIVEDRAB
+        Color.AQUAMARINE,
+        Color.OLIVEDRAB,
+        Color.LIGHTCORAL
 )
 
 private val DRAGGING = Color.YELLOW
