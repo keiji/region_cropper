@@ -219,6 +219,7 @@ class Main : App() {
             index++
         }
 
+        showCropCompleteDialog(path)
     }
 
     private fun showLicensesDialog() {
@@ -247,6 +248,14 @@ class Main : App() {
         alert.dialogPane.content = expContent
 
         alert.show()
+    }
+
+    private fun showCropCompleteDialog(outputFilePath: File) {
+        val alert = Alert(Alert.AlertType.INFORMATION)
+        alert.title = "Crop Complete"
+        alert.headerText = String.format("Saved pictures to %s", outputFilePath.absolutePath)
+
+        alert.showAndWait()
     }
 
     private fun showAboutDialog() {
