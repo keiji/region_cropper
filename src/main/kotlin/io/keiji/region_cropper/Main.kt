@@ -261,8 +261,12 @@ class Main : App() {
     private fun showAboutDialog() {
         val alert = Alert(Alert.AlertType.INFORMATION)
         alert.title = "About"
-        alert.headerText = "RegionCropper (Megane Co)"
-        alert.contentText = "Copyright 2016 Keiji Ariyama"
+        alert.headerText =
+                "RegionCropper (Megane Co)"
+        alert.contentText =
+                "Copyright 2016 Keiji Ariyama\n" +
+                        "GitHub: https://github.com/keiji\n" +
+                        "Web: https://blog.keiji.io"
 
         alert.showAndWait()
     }
