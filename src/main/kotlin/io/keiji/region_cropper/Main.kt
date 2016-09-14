@@ -24,6 +24,9 @@ import java.text.SimpleDateFormat
 import java.util.*
 import javax.imageio.ImageIO
 
+const val WINDOW_WIDTH = 1024.0
+const val WINDOW_HEIGHT = 768.0
+
 const val LICENSE_FILE_NAME = "licenses.txt"
 
 class Main : App() {
@@ -99,20 +102,24 @@ class Main : App() {
 
         initMenu(menuBar, stage)
 
-        root.center = editView
+        setResizeListeners(root, menuBar)
 
-        editView.paddingTop = menuBar.height
-        editView.setFocusTraversable(true)
-        editView.requestFocus()
-
-        setResizeListeners(root)
-
-        val scene = Scene(root, 1024.0, 768.0)
+        val scene = Scene(root, WINDOW_WIDTH, WINDOW_HEIGHT)
         stage.setScene(scene)
         stage.show()
+
+        root.center = editView
+        editView.let {
+            it.height = root.height - menuBar.height
+            it.width = root.width
+            it.onResize()
+            it.setFocusTraversable(true)
+            it.requestFocus()
+        }
+
     }
 
-    private fun setResizeListeners(root: BorderPane) {
+    private fun setResizeListeners(root: BorderPane, menuBar: MenuBar) {
         /*
          * canvasのリサイズを検知できない課題がある
          * また、VBoxなどを設置した場合はリサイズ時に縮小イベントをキャッチしない課題がある
@@ -129,7 +136,7 @@ class Main : App() {
                 {
                     observableValue: ObservableValue<out Number>, oldValue: Number, newValue: Number ->
                     run {
-                        editView.height = root.height
+                        editView.height = root.height - menuBar.height
                         editView.onResize()
                     }
                 })
@@ -191,6 +198,8 @@ class Main : App() {
         if (candidateList.faces == null) {
             return
         }
+
+        candidateList.save(jsonFile)
 
         val filePath: File
         if (path.isDirectory) {

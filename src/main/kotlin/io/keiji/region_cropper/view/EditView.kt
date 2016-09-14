@@ -13,6 +13,8 @@ import javafx.scene.paint.Color
 import java.io.File
 import java.util.*
 
+const val MIN_REGION_SIZE = 10.0f
+
 private val FACE = Color(0.0, 0.0, 1.0, 1.0)
 private val FACE_SELECTED = Color(1.0, 0.0, 0.0, 1.0)
 
@@ -54,7 +56,6 @@ class EditView(val callback: Callback) : Canvas() {
     private var selectedIndex: Int = 0
 
     private var reticle: Point = Point(0.0, 0.0)
-    var paddingTop: Double = 0.0
 
     private val keyLeftImage: Image
     private val keyUpImage: Image
@@ -153,6 +154,7 @@ class EditView(val callback: Callback) : Canvas() {
                     }
                     event.button == MouseButton.PRIMARY && event.eventType == MouseEvent.MOUSE_RELEASED -> {
                         if (draggingRect != null) {
+                            checkRect(draggingRect!!)
                             addRect(draggingRect!!)
                             draggingRect = null
                         }
@@ -211,7 +213,7 @@ class EditView(val callback: Callback) : Canvas() {
         scale = Math.min(scaleHorizontal, scaleVertical)
 
         paddingHorizontal = (width - (imageData.width * scale)) / 2
-        paddingVertical = (height - ((imageData.height - paddingTop) * scale)) / 2
+        paddingVertical = (height - (imageData.height * scale)) / 2
 
         draw()
     }
@@ -222,8 +224,7 @@ class EditView(val callback: Callback) : Canvas() {
 
         gc.save()
 
-        gc.translate(paddingHorizontal, paddingTop + paddingVertical)
-
+        gc.translate(paddingHorizontal, paddingVertical)
         gc.drawImage(imageData,
                 0.0,
                 0.0,
@@ -348,11 +349,34 @@ class EditView(val callback: Callback) : Canvas() {
         return true
     }
 
+    private fun checkRect(rect: CandidateList.Region.Rect) {
+        rect.left = Math.max(0.0f, rect.left)
+        rect.top = Math.max(0.0f, rect.top)
+        rect.right = Math.min(imageData.width.toFloat(), rect.right)
+        rect.bottom = Math.min(imageData.height.toFloat(), rect.bottom)
+
+        if (rect.width() < MIN_REGION_SIZE) {
+            when {
+                rect.left == 0.0f -> rect.right = MIN_REGION_SIZE
+                rect.right == imageData.width.toFloat() -> rect.left = imageData.width.toFloat() - MIN_REGION_SIZE
+                else -> rect.right = rect.left + MIN_REGION_SIZE
+            }
+        }
+        if (rect.height() < MIN_REGION_SIZE) {
+            when {
+                rect.top == 0.0f -> rect.bottom = MIN_REGION_SIZE
+                rect.bottom == imageData.height.toFloat() -> rect.top = imageData.height.toFloat() - MIN_REGION_SIZE
+                else -> rect.bottom = rect.top + MIN_REGION_SIZE
+            }
+        }
+    }
+
     private fun moveToLeft(size: Float) {
         if (!selectedCandidate.isFace) {
             return
         }
         selectedCandidate.rect.offset(-size, 0f)
+        checkRect(selectedCandidate.rect)
     }
 
     private fun moveToTop(size: Float) {
@@ -360,6 +384,7 @@ class EditView(val callback: Callback) : Canvas() {
             return
         }
         selectedCandidate.rect.offset(0f, -size)
+        checkRect(selectedCandidate.rect)
     }
 
     private fun moveToRight(size: Float) {
@@ -367,6 +392,7 @@ class EditView(val callback: Callback) : Canvas() {
             return
         }
         selectedCandidate.rect.offset(size, 0f)
+        checkRect(selectedCandidate.rect)
     }
 
     private fun moveToBottom(size: Float) {
@@ -374,6 +400,7 @@ class EditView(val callback: Callback) : Canvas() {
             return
         }
         selectedCandidate.rect.offset(0f, size)
+        checkRect(selectedCandidate.rect)
     }
 
     private fun expandToLeft(size: Float) {
@@ -381,6 +408,7 @@ class EditView(val callback: Callback) : Canvas() {
             return
         }
         selectedCandidate.rect.left -= size
+        checkRect(selectedCandidate.rect)
     }
 
     private fun expandToTop(size: Float) {
@@ -388,6 +416,7 @@ class EditView(val callback: Callback) : Canvas() {
             return
         }
         selectedCandidate.rect.top -= size
+        checkRect(selectedCandidate.rect)
     }
 
     private fun expandToRight(size: Float) {
@@ -395,6 +424,7 @@ class EditView(val callback: Callback) : Canvas() {
             return
         }
         selectedCandidate.rect.right += size
+        checkRect(selectedCandidate.rect)
     }
 
     private fun expandToBottom(size: Float) {
@@ -402,6 +432,7 @@ class EditView(val callback: Callback) : Canvas() {
             return
         }
         selectedCandidate.rect.bottom += size
+        checkRect(selectedCandidate.rect)
     }
 
     fun save(imageFile: File?) {
@@ -434,6 +465,7 @@ class EditView(val callback: Callback) : Canvas() {
         Collections.sort(candidateList.faces!!, PositionComparator())
 
         selectedIndex = candidateList.faces!!.indexOf(selectedCandidate)
+        checkRect(selectedCandidate.rect)
     }
 
     private val NEW_RECT_SIZE = 30
