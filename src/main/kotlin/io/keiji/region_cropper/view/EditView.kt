@@ -70,7 +70,7 @@ class EditView(val callback: Callback) : Canvas() {
     }
 
     var mode: Mode = Mode.Normal
-    var showReticle: Boolean = false
+    var isFocus: Boolean = false
 
     private val draggingStartPoint: Point = Point(0.0, 0.0)
     private var draggingRect: CandidateList.Region.Rect? = null
@@ -108,7 +108,7 @@ class EditView(val callback: Callback) : Canvas() {
                         event.consume()
                     }
                     event.isShortcutDown -> mode = Mode.Shrink
-                    event.code == KeyCode.SPACE -> showReticle = true
+                    event.code == KeyCode.SPACE -> isFocus = true
                 }
 
                 when {
@@ -163,7 +163,7 @@ class EditView(val callback: Callback) : Canvas() {
         addEventFilter(KeyEvent.KEY_RELEASED, { event ->
             run {
                 when {
-                    event.code == KeyCode.SPACE -> showReticle = false
+                    event.code == KeyCode.SPACE -> isFocus = false
                     event.isShortcutDown -> mode = Mode.Shrink
                     event.isAltDown -> mode = Mode.Expand
                     else -> mode = Mode.Normal
@@ -275,31 +275,49 @@ class EditView(val callback: Callback) : Canvas() {
 
         gc.lineWidth = 1.0
 
-        for (c: CandidateList.Region in candidateList.regions!!) {
-            if (c == selectedCandidate) {
-                continue
+        if (isFocus) {
+            grayOut(gc)
+        } else {
+            for (c: CandidateList.Region in candidateList.regions!!) {
+                if (c === selectedCandidate) {
+                    continue
+                }
+                drawRegion(c, gc, false)
             }
-            drawRegion(c, gc, false)
         }
 
         drawRegion(selectedCandidate, gc, true)
 
-        if (showReticle && selectedCandidate !== NOT_SELECTED) {
-
-            gc.stroke = SELECTED
-            gc.strokeLine(selectedCandidate.rect.centerX() * scale,
-                    0.0,
-                    selectedCandidate.rect.centerX() * scale,
-                    imageData.height * scale)
-            gc.strokeLine(0.0,
-                    selectedCandidate.rect.centerY() * scale,
-                    imageData.width * scale,
-                    selectedCandidate.rect.centerY() * scale)
-        }
-
         drawDraggingRect(gc, draggingRect)
 
 //        gc.fillOval(tempPoint.x * scale, tempPoint.y * scale, 5.0, 5.0)
+
+        gc.restore()
+    }
+
+    private fun grayOut(gc: GraphicsContext) {
+        gc.save()
+
+        // 背景をグレーアウト
+        gc.fill = Color.grayRgb(0, 0.5)
+        gc.fillRect(
+                0.0,
+                0.0,
+                imageData.width * scale,
+                imageData.height * scale)
+
+        // 現在の選択領域を切り抜いた画像を重ねることで背景をくり抜いたように見せる
+        gc.drawImage(
+                imageData,
+                selectedCandidate.rect.left.toDouble(),
+                selectedCandidate.rect.top.toDouble(),
+                selectedCandidate.rect.width().toDouble(),
+                selectedCandidate.rect.height().toDouble(),
+                selectedCandidate.rect.left * scale,
+                selectedCandidate.rect.top * scale,
+                selectedCandidate.rect.width() * scale,
+                selectedCandidate.rect.height() * scale
+        )
 
         gc.restore()
     }
@@ -319,7 +337,7 @@ class EditView(val callback: Callback) : Canvas() {
     private val margin: Double = 2.0
 
     private fun drawRegion(c: CandidateList.Region, gc: GraphicsContext, isSelected: Boolean) {
-        if (selectedCandidate === NOT_SELECTED) {
+        if (c === NOT_SELECTED) {
             return
         }
 
