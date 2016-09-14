@@ -166,10 +166,10 @@ class EditView(val callback: Callback) : Canvas() {
                             draggingStartPoint.y = tempPoint.y
                             draggingRect = CandidateList.Region.Rect(0.0f, 0.0f, 0.0f, 0.0f)
                         }
-                        draggingRect!!.left = Math.min(draggingStartPoint.x, tempPoint.x).toFloat()
-                        draggingRect!!.right = Math.max(draggingStartPoint.x, tempPoint.x).toFloat()
-                        draggingRect!!.top = Math.min(draggingStartPoint.y, tempPoint.y).toFloat()
-                        draggingRect!!.bottom = Math.max(draggingStartPoint.y, tempPoint.y).toFloat()
+                        draggingRect!!.left = Math.round(Math.min(draggingStartPoint.x, tempPoint.x)).toFloat()
+                        draggingRect!!.right = Math.round(Math.max(draggingStartPoint.x, tempPoint.x)).toFloat()
+                        draggingRect!!.top = Math.round(Math.min(draggingStartPoint.y, tempPoint.y)).toFloat()
+                        draggingRect!!.bottom = Math.round(Math.max(draggingStartPoint.y, tempPoint.y)).toFloat()
                     }
                     event.button == MouseButton.PRIMARY && event.eventType == MouseEvent.MOUSE_RELEASED -> {
                         if (draggingRect != null) {
@@ -323,10 +323,10 @@ class EditView(val callback: Callback) : Canvas() {
 
         gc.stroke = SELECTED
         gc.strokeRect(
-                (rect.left - 1) * scale,
-                (rect.top - 1) * scale,
-                (rect.width() + 2) * scale,
-                (rect.height() + 2) * scale
+                (rect.left - 5) * scale,
+                (rect.top - 5) * scale,
+                (rect.width() + 10) * scale,
+                (rect.height() + 10) * scale
         )
 
         if (c.label == 0) {
