@@ -6,7 +6,7 @@
 
 ## Download
 
- Binary(Zip): [https://github.com/keiji/region_cropper](https://github.com/keiji/region_cropper)
+ Binary(Zip): [https://github.com/keiji/region_cropper/releases](https://github.com/keiji/region_cropper/releases)
 
 ## 使い方（Usage）
 
