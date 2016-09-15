@@ -26,6 +26,10 @@
 
 ![Set Region](images/set_region.png)
 
+スペース（Space）キーを押すと、選択中の領域以外の場所がグレーアウトされます。
+
+![Set Region](images/focus_region.png)
+
 | キー | 動作 |
 |:-----------|:------------|
 | Enter | 次の領域へ移動。最後の領域であれば次のファイルを表示 |
