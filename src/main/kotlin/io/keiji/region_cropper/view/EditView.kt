@@ -35,7 +35,7 @@ private val SELECTED = Color(1.0, 0.0, 0.0, 1.0)
 
 private val regionColors: Array<Color> = arrayOf(
         Color.BLACK,
-        Color.LIGHTGREEN,
+        Color.DARKSEAGREEN,
         Color.BLUE,
         Color.BURLYWOOD,
         Color.AZURE,
