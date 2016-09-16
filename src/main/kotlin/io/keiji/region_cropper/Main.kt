@@ -112,6 +112,7 @@ class Main : App() {
                 })
 
         if (filePath.isDirectory) {
+            fileIndex = 0
             filePath = File(baseDir, fileList[fileIndex])
         } else {
             fileIndex = fileList.indexOf(filePath.name)
