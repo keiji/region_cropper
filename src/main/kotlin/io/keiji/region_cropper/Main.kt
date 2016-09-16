@@ -1,6 +1,7 @@
 package io.keiji.region_cropper
 
 import io.keiji.region_cropper.entity.CandidateList
+import io.keiji.region_cropper.entity.Settings
 import io.keiji.region_cropper.view.EditView
 import javafx.application.Application
 import javafx.beans.value.ObservableValue
@@ -72,7 +73,33 @@ class Main : App() {
         }
     }
 
-    val editView: EditView = EditView(editViewCallback)
+    private var settings: Settings = generateDefaultSettings()
+
+    private val editView: EditView = EditView(editViewCallback, settings)
+
+    private fun generateDefaultSettings(): Settings {
+        val labelList: ArrayList<Settings.Lebel> = ArrayList<Settings.Lebel>()
+        labelList.add(Settings.Lebel(0, false, "#000000"))
+        labelList.add(Settings.Lebel(1, true, "#8FBC8F"))
+        labelList.add(Settings.Lebel(2, true, "#0000FF"))
+        labelList.add(Settings.Lebel(3, true, "#DEB887"))
+        labelList.add(Settings.Lebel(4, true, "#F0FFFF"))
+        labelList.add(Settings.Lebel(5, true, "#FFA500"))
+        labelList.add(Settings.Lebel(6, true, "#FFC0CB"))
+        labelList.add(Settings.Lebel(7, true, "#7FFFD4"))
+        labelList.add(Settings.Lebel(8, true, "#6B8E23"))
+        labelList.add(Settings.Lebel(9, true, "#F08080"))
+        return Settings(labelList)
+    }
+
+    override fun init() {
+        val settingPath: File = File("./settings.json")
+        if (!settingPath.exists()) {
+            settings.save(settingPath)
+        } else {
+            settings = Settings.getInstance("./settings.json")
+        }
+    }
 
     fun initialize(file: File) {
         var filePath: File = file
@@ -125,6 +152,7 @@ class Main : App() {
 
         root.center = editView
         editView.let {
+            it.settings = settings
             it.height = root.height - menuBar.height
             it.width = root.width
             it.onResize()

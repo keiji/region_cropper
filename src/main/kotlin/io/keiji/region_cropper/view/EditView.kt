@@ -18,6 +18,7 @@ limitations under the License.
 
 import io.keiji.region_cropper.entity.PositionComparator
 import io.keiji.region_cropper.entity.CandidateList
+import io.keiji.region_cropper.entity.Settings
 import javafx.scene.canvas.Canvas
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
@@ -33,19 +34,6 @@ const val MIN_REGION_SIZE = 10.0f
 
 private val SELECTED = Color(1.0, 0.0, 0.0, 1.0)
 
-private val regionColors: Array<Color> = arrayOf(
-        Color.BLACK,
-        Color.DARKSEAGREEN,
-        Color.BLUE,
-        Color.BURLYWOOD,
-        Color.AZURE,
-        Color.ORANGE,
-        Color.PINK,
-        Color.AQUAMARINE,
-        Color.OLIVEDRAB,
-        Color.LIGHTCORAL
-)
-
 private val DRAGGING = Color.YELLOW
 
 private val NOT_SELECTED = CandidateList.Region(
@@ -55,7 +43,7 @@ private val NOT_SELECTED = CandidateList.Region(
 private data class Point(var x: Double, var y: Double) {
 }
 
-class EditView(val callback: Callback) : Canvas() {
+class EditView(val callback: Callback, var settings: Settings) : Canvas() {
 
     interface Callback {
         fun onNextFile(reverse: Boolean = false)
@@ -102,13 +90,19 @@ class EditView(val callback: Callback) : Canvas() {
 
                 val shiftValue = if (event.isShiftDown) 1.0f else 5.0f
 
+                val labelSetting: Settings.Lebel = settings.labelSettings[selectedCandidate.label]
+                val editable: Boolean = labelSetting.editable
+
                 when {
+                    event.code == KeyCode.SPACE -> isFocus = true
+                    !editable -> {
+                        /* do nothing */
+                    }
                     event.isAltDown -> {
                         mode = Mode.Expand
                         event.consume()
                     }
                     event.isShortcutDown -> mode = Mode.Shrink
-                    event.code == KeyCode.SPACE -> isFocus = true
                 }
 
                 when {
@@ -128,21 +122,7 @@ class EditView(val callback: Callback) : Canvas() {
                     event.code == KeyCode.TAB -> {
                         selectNextRegion()
                     }
-                    event.isShiftDown && event.code == KeyCode.D -> deleteRegion()
-                    event.isShortcutDown && event.code == KeyCode.LEFT -> expandToRight(-shiftValue)
-                    event.isShortcutDown && event.code == KeyCode.UP -> expandToBottom(-shiftValue)
-                    event.isShortcutDown && event.code == KeyCode.RIGHT -> expandToLeft(-shiftValue)
-                    event.isShortcutDown && event.code == KeyCode.DOWN -> expandToTop(-shiftValue)
-                    event.isAltDown && event.code == KeyCode.LEFT -> expandToLeft(shiftValue)
-                    event.isAltDown && event.code == KeyCode.UP -> expandToTop(shiftValue)
-                    event.isAltDown && event.code == KeyCode.RIGHT -> expandToRight(shiftValue)
-                    event.isAltDown && event.code == KeyCode.DOWN -> expandToBottom(shiftValue)
                     event.code == KeyCode.ESCAPE -> callback.onShowResetConfirmationDialog()
-                    event.code == KeyCode.BACK_SPACE -> deleteRegion()
-                    event.code == KeyCode.LEFT -> moveToLeft(shiftValue)
-                    event.code == KeyCode.UP -> moveToTop(shiftValue)
-                    event.code == KeyCode.RIGHT -> moveToRight(shiftValue)
-                    event.code == KeyCode.DOWN -> moveToBottom(shiftValue)
                     event.code == KeyCode.END -> callback.onNextFile()
                     event.code == KeyCode.HOME -> callback.onPreviousFile()
                     event.code == KeyCode.DIGIT0 -> setLabel(0)
@@ -155,6 +135,25 @@ class EditView(val callback: Callback) : Canvas() {
                     event.code == KeyCode.DIGIT7 -> setLabel(7)
                     event.code == KeyCode.DIGIT8 -> setLabel(8)
                     event.code == KeyCode.DIGIT9 -> setLabel(9)
+
+                    !editable -> {
+                        /* do nothing */
+                    }
+
+                    event.isShiftDown && event.code == KeyCode.D -> deleteRegion()
+                    event.isShortcutDown && event.code == KeyCode.LEFT -> expandToRight(-shiftValue)
+                    event.isShortcutDown && event.code == KeyCode.UP -> expandToBottom(-shiftValue)
+                    event.isShortcutDown && event.code == KeyCode.RIGHT -> expandToLeft(-shiftValue)
+                    event.isShortcutDown && event.code == KeyCode.DOWN -> expandToTop(-shiftValue)
+                    event.isAltDown && event.code == KeyCode.LEFT -> expandToLeft(shiftValue)
+                    event.isAltDown && event.code == KeyCode.UP -> expandToTop(shiftValue)
+                    event.isAltDown && event.code == KeyCode.RIGHT -> expandToRight(shiftValue)
+                    event.isAltDown && event.code == KeyCode.DOWN -> expandToBottom(shiftValue)
+                    event.code == KeyCode.BACK_SPACE -> deleteRegion()
+                    event.code == KeyCode.LEFT -> moveToLeft(shiftValue)
+                    event.code == KeyCode.UP -> moveToTop(shiftValue)
+                    event.code == KeyCode.RIGHT -> moveToRight(shiftValue)
+                    event.code == KeyCode.DOWN -> moveToBottom(shiftValue)
                 }
                 draw()
             }
@@ -342,8 +341,9 @@ class EditView(val callback: Callback) : Canvas() {
         }
 
         val rect: CandidateList.Region.Rect = c.rect
+        val color: Color = settings.labelSettings[c.label].webColor
 
-        gc.stroke = regionColors[c.label]
+        gc.stroke = color
         gc.strokeRect(
                 rect.left * scale,
                 rect.top * scale,
@@ -439,65 +439,41 @@ class EditView(val callback: Callback) : Canvas() {
     }
 
     private fun moveToLeft(size: Float) {
-        if (selectedCandidate.label == 0) {
-            return
-        }
         selectedCandidate.rect.offset(-size, 0f)
         validateRect(selectedCandidate.rect)
     }
 
     private fun moveToTop(size: Float) {
-        if (selectedCandidate.label == 0) {
-            return
-        }
         selectedCandidate.rect.offset(0f, -size)
         validateRect(selectedCandidate.rect)
     }
 
     private fun moveToRight(size: Float) {
-        if (selectedCandidate.label == 0) {
-            return
-        }
         selectedCandidate.rect.offset(size, 0f)
         validateRect(selectedCandidate.rect)
     }
 
     private fun moveToBottom(size: Float) {
-        if (selectedCandidate.label == 0) {
-            return
-        }
         selectedCandidate.rect.offset(0f, size)
         validateRect(selectedCandidate.rect)
     }
 
     private fun expandToLeft(size: Float) {
-        if (selectedCandidate.label == 0) {
-            return
-        }
         selectedCandidate.rect.left -= size
         validateRect(selectedCandidate.rect)
     }
 
     private fun expandToTop(size: Float) {
-        if (selectedCandidate.label == 0) {
-            return
-        }
         selectedCandidate.rect.top -= size
         validateRect(selectedCandidate.rect)
     }
 
     private fun expandToRight(size: Float) {
-        if (selectedCandidate.label == 0) {
-            return
-        }
         selectedCandidate.rect.right += size
         validateRect(selectedCandidate.rect)
     }
 
     private fun expandToBottom(size: Float) {
-        if (selectedCandidate.label == 0) {
-            return
-        }
         selectedCandidate.rect.bottom += size
         validateRect(selectedCandidate.rect)
     }
@@ -507,10 +483,6 @@ class EditView(val callback: Callback) : Canvas() {
     }
 
     private fun deleteRegion() {
-        if (selectedCandidate.label == 0) {
-            return
-        }
-
         candidateList.regions!!.remove(selectedCandidate)
 
         if (selectedIndex > candidateList.regions!!.size - 1) {
@@ -560,5 +532,4 @@ class EditView(val callback: Callback) : Canvas() {
         selectedIndex = if (!reverse) 0 else (this.candidateList.regions!!.size - 1)
         selectedCandidate = this.candidateList.regions!![selectedIndex]
     }
-
 }
