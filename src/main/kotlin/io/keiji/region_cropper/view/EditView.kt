@@ -58,7 +58,14 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
     }
 
     var mode: Mode = Mode.Normal
-    var isFocus: Boolean = false
+
+    enum class Focus(val isEnabled: Boolean) {
+        Off(false),
+        On(true),
+        Locked(true),
+    }
+
+    var isFocus: Focus = Focus.Off
 
     private val draggingStartPoint: Point = Point(0.0, 0.0)
     private var draggingRect: CandidateList.Region.Rect? = null
@@ -95,7 +102,8 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
                 val deletable: Boolean = labelSetting.deletable
 
                 when {
-                    event.code == KeyCode.SPACE -> isFocus = true
+                    event.isShiftDown && event.code == KeyCode.SPACE -> isFocus = Focus.Locked
+                    event.code == KeyCode.SPACE -> isFocus = Focus.On
                     !editable -> {
                         /* do nothing */
                     }
@@ -179,7 +187,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
         addEventFilter(KeyEvent.KEY_RELEASED, { event ->
             run {
                 when {
-                    event.code == KeyCode.SPACE -> isFocus = false
+                    isFocus != Focus.Locked && event.code == KeyCode.SPACE -> isFocus = Focus.Off
                     event.isShortcutDown -> mode = Mode.Shrink
                     event.isAltDown -> mode = Mode.Expand
                     else -> mode = Mode.Normal
@@ -295,7 +303,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
 
         gc.lineWidth = 1.0
 
-        if (isFocus) {
+        if (isFocus.isEnabled) {
             grayOut(gc)
         } else {
             for (c: CandidateList.Region in candidateList.regions!!) {
