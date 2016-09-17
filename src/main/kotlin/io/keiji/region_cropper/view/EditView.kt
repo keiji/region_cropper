@@ -92,6 +92,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
 
                 val labelSetting: Settings.Lebel = settings.labelSettings[selectedCandidate.label]
                 val editable: Boolean = labelSetting.editable
+                val deletable: Boolean = labelSetting.deletable
 
                 when {
                     event.code == KeyCode.SPACE -> isFocus = true
@@ -125,6 +126,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
                     event.code == KeyCode.ESCAPE -> callback.onShowResetConfirmationDialog()
                     event.code == KeyCode.END -> callback.onNextFile()
                     event.code == KeyCode.HOME -> callback.onPreviousFile()
+                    deletable && event.code == KeyCode.BACK_SPACE -> deleteRegion()
                     event.code == KeyCode.DIGIT0 -> setLabel(0)
                     event.code == KeyCode.DIGIT1 -> setLabel(1)
                     event.code == KeyCode.DIGIT2 -> setLabel(2)
@@ -149,7 +151,6 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
                     event.isAltDown && event.code == KeyCode.UP -> expandToTop(shiftValue)
                     event.isAltDown && event.code == KeyCode.RIGHT -> expandToRight(shiftValue)
                     event.isAltDown && event.code == KeyCode.DOWN -> expandToBottom(shiftValue)
-                    event.code == KeyCode.BACK_SPACE -> deleteRegion()
                     event.code == KeyCode.LEFT -> moveToLeft(shiftValue)
                     event.code == KeyCode.UP -> moveToTop(shiftValue)
                     event.code == KeyCode.RIGHT -> moveToRight(shiftValue)
@@ -498,7 +499,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
     }
 
     private fun addRect(rect: CandidateList.Region.Rect) {
-        selectedCandidate = CandidateList.Region(1.0, 1, rect)
+        selectedCandidate = CandidateList.Region(1.0, settings.defaultLabelNumber, rect)
         candidateList.regions!!.add(selectedCandidate)
 
         Collections.sort(candidateList.regions!!, PositionComparator())

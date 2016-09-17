@@ -79,17 +79,17 @@ class Main : App() {
 
     private fun generateDefaultSettings(): Settings {
         val labelList: ArrayList<Settings.Lebel> = ArrayList<Settings.Lebel>()
-        labelList.add(Settings.Lebel(0, false, "#000000"))
-        labelList.add(Settings.Lebel(1, true, "#8FBC8F"))
-        labelList.add(Settings.Lebel(2, true, "#0000FF"))
-        labelList.add(Settings.Lebel(3, true, "#DEB887"))
-        labelList.add(Settings.Lebel(4, true, "#F0FFFF"))
-        labelList.add(Settings.Lebel(5, true, "#FFA500"))
-        labelList.add(Settings.Lebel(6, true, "#FFC0CB"))
-        labelList.add(Settings.Lebel(7, true, "#7FFFD4"))
-        labelList.add(Settings.Lebel(8, true, "#6B8E23"))
-        labelList.add(Settings.Lebel(9, true, "#F08080"))
-        return Settings(labelList)
+        labelList.add(Settings.Lebel(0, false, false, "#000000"))
+        labelList.add(Settings.Lebel(1, true, true, "#8FBC8F"))
+        labelList.add(Settings.Lebel(2, true, true, "#0000FF"))
+        labelList.add(Settings.Lebel(3, true, true, "#DEB887"))
+        labelList.add(Settings.Lebel(4, true, true, "#F0FFFF"))
+        labelList.add(Settings.Lebel(5, true, true, "#FFA500"))
+        labelList.add(Settings.Lebel(6, true, true, "#FFC0CB"))
+        labelList.add(Settings.Lebel(7, true, true, "#7FFFD4"))
+        labelList.add(Settings.Lebel(8, true, true, "#6B8E23"))
+        labelList.add(Settings.Lebel(9, true, true, "#F08080"))
+        return Settings(1, labelList)
     }
 
     override fun init() {
