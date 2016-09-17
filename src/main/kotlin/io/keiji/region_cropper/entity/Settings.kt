@@ -29,8 +29,8 @@ import java.util.*
 class LabelComparator : Comparator<Settings.Lebel> {
     override fun compare(obj1: Settings.Lebel, obj2: Settings.Lebel): Int {
         when {
-            obj1.labelNumber > obj2.labelNumber -> return 1
-            obj1.labelNumber < obj2.labelNumber -> return -1
+            obj1.number > obj2.number -> return 1
+            obj1.number < obj2.number -> return -1
             else -> return 0
         }
     }
@@ -73,8 +73,12 @@ data class Settings(
 
     data class Lebel(
             @Expose
-            @SerializedName("label_number")
-            val labelNumber: Int,
+            @SerializedName("number")
+            val number: Int,
+
+            @Expose
+            @SerializedName("name")
+            val name: String?,
 
             @Expose
             @SerializedName("editable")
