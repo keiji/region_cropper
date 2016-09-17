@@ -376,12 +376,12 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
             return
         }
 
-        gc.stroke = SELECTED
+        gc.stroke = settings.selectedRegionWebColor
         gc.strokeRect(
-                (rect.left - 5) * scale,
-                (rect.top - 5) * scale,
-                (rect.width() + 10) * scale,
-                (rect.height() + 10) * scale
+                (rect.left) * scale - 2,
+                (rect.top) * scale - 2,
+                (rect.width()) * scale + 4,
+                (rect.height()) * scale + 4
         )
 
         if (c.label == 0) {

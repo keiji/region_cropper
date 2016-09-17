@@ -89,7 +89,7 @@ class Main : App() {
         labelList.add(Settings.Lebel(7, true, true, "#7FFFD4"))
         labelList.add(Settings.Lebel(8, true, true, "#6B8E23"))
         labelList.add(Settings.Lebel(9, true, true, "#F08080"))
-        return Settings(1, labelList)
+        return Settings(1, "#ff0000", labelList)
     }
 
     override fun init() {
