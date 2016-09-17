@@ -138,6 +138,22 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
                     event.code == KeyCode.DIGIT8 -> setLabel(8)
                     event.code == KeyCode.DIGIT9 -> setLabel(9)
 
+                    event.code == KeyCode.DECIMAL -> {
+                        if (!selectPrevRegion()) {
+                            callback.onPreviousFile(true)
+                        }
+                    }
+                    event.code == KeyCode.NUMPAD0 -> setLabel(0, true)
+                    event.code == KeyCode.NUMPAD1 -> setLabel(1, true)
+                    event.code == KeyCode.NUMPAD2 -> setLabel(2, true)
+                    event.code == KeyCode.NUMPAD3 -> setLabel(3, true)
+                    event.code == KeyCode.NUMPAD4 -> setLabel(4, true)
+                    event.code == KeyCode.NUMPAD5 -> setLabel(5, true)
+                    event.code == KeyCode.NUMPAD6 -> setLabel(6, true)
+                    event.code == KeyCode.NUMPAD7 -> setLabel(7, true)
+                    event.code == KeyCode.NUMPAD8 -> setLabel(8, true)
+                    event.code == KeyCode.NUMPAD9 -> setLabel(9, true)
+
                     !editable -> {
                         /* do nothing */
                     }
@@ -201,12 +217,16 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
         })
     }
 
-    private fun setLabel(label: Int) {
+    private fun setLabel(label: Int, moveNext: Boolean = false) {
         if (selectedCandidate === NOT_SELECTED) {
             return
         }
 
         selectedCandidate.label = label
+
+        if (moveNext) {
+            selectNextRegion()
+        }
     }
 
     var scale: Double = 1.0
