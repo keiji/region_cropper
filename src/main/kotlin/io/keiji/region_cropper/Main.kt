@@ -45,6 +45,7 @@ const val WINDOW_WIDTH = 1024.0
 const val WINDOW_HEIGHT = 768.0
 
 const val LICENSE_FILE_NAME = "licenses.txt"
+const val SETTING_FILE_PATH = "./settings.json"
 
 class Main : App() {
 
@@ -89,15 +90,15 @@ class Main : App() {
         labelList.add(Settings.Lebel(7, null, true, true, "#7FFFD4"))
         labelList.add(Settings.Lebel(8, null, true, true, "#6B8E23"))
         labelList.add(Settings.Lebel(9, null, true, true, "#F08080"))
-        return Settings(1, "#ff0000", labelList)
+        return Settings(1, "#ff0000", "#ffff00", labelList)
     }
 
     override fun init() {
-        val settingPath: File = File("./settings.json")
+        val settingPath: File = File(SETTING_FILE_PATH)
         if (!settingPath.exists()) {
             settings.save(settingPath)
         } else {
-            settings = Settings.getInstance("./settings.json")
+            settings = Settings.getInstance(SETTING_FILE_PATH)
         }
     }
 

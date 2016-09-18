@@ -42,8 +42,12 @@ data class Settings(
         val defaultLabelNumber: Int,
 
         @Expose
-        @SerializedName("selected_region_color")
-        val selectedRegionColor: String,
+        @SerializedName("selected_region_stroke_color")
+        val selectedRegionStrokeColor: String,
+
+        @Expose
+        @SerializedName("dragging_region_stroke_color")
+        val draggingRegionStrokeColor: String,
 
         @Expose
         @SerializedName("label_settings")
@@ -58,9 +62,14 @@ data class Settings(
         }
     }
 
-    val selectedRegionWebColor: Color
+    val selectedRegionStrokeWebColor: Color
         get() {
-            return Color.web(selectedRegionColor)
+            return Color.web(selectedRegionStrokeColor)
+        }
+
+    val draggingRegionStrokeWebColor: Color
+        get() {
+            return Color.web(draggingRegionStrokeColor)
         }
 
     fun save(file: File) {

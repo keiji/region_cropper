@@ -32,10 +32,6 @@ import java.util.*
 
 const val MIN_REGION_SIZE = 10.0f
 
-private val SELECTED = Color(1.0, 0.0, 0.0, 1.0)
-
-private val DRAGGING = Color.YELLOW
-
 private val NOT_SELECTED = CandidateList.Region(
         -1.0, 0,
         CandidateList.Region.Rect(0.0f, 0.0f, 0.0f, 0.0f))
@@ -355,7 +351,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
             return
         }
 
-        gc.stroke = DRAGGING
+        gc.stroke = settings.draggingRegionStrokeWebColor
         gc.strokeRect(draggingRect.left.toDouble() * scale,
                 draggingRect.top.toDouble() * scale,
                 draggingRect.width().toDouble() * scale,
@@ -384,7 +380,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
             return
         }
 
-        gc.stroke = settings.selectedRegionWebColor
+        gc.stroke = settings.selectedRegionStrokeWebColor
         gc.strokeRect(
                 (rect.left) * scale - 2,
                 (rect.top) * scale - 2,
