@@ -299,15 +299,15 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
 
         gc.lineWidth = 1.0
 
+        for (c: CandidateList.Region in candidateList.regions!!) {
+            if (c === selectedCandidate) {
+                continue
+            }
+            drawRegion(c, gc, false)
+        }
+
         if (isFocus.isEnabled) {
             grayOut(gc)
-        } else {
-            for (c: CandidateList.Region in candidateList.regions!!) {
-                if (c === selectedCandidate) {
-                    continue
-                }
-                drawRegion(c, gc, false)
-            }
         }
 
         drawRegion(selectedCandidate, gc, true)
