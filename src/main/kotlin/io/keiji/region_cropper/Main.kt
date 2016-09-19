@@ -11,6 +11,8 @@ import javafx.scene.Scene
 import javafx.scene.control.*
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
+import javafx.scene.input.KeyCode
+import javafx.scene.input.KeyEvent
 import javafx.scene.layout.BorderPane
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.Priority
@@ -185,6 +187,15 @@ class Main : App() {
 
         initialize(file = filePath)
 
+        stage.addEventFilter(KeyEvent.KEY_PRESSED, { event ->
+            run {
+                when {
+                    event.isShortcutDown && event.code == KeyCode.S -> candidateList.save(jsonFile)
+                    event.isShortcutDown && event.code == KeyCode.W -> stage.close()
+                }
+            }
+        })
+
         val root: BorderPane = FXMLLoader.load(javaClass.classLoader.getResource("main.fxml"))
         val menuBar: MenuBar = root.lookup("#menuBar") as MenuBar
 
@@ -348,7 +359,7 @@ class Main : App() {
     }
 
     private fun prevPicture(reverse: Boolean = false) {
-        editView.save(jsonFile)
+        candidateList.save(jsonFile)
 
         if (fileIndex == 0) {
             return
@@ -360,7 +371,7 @@ class Main : App() {
     }
 
     private fun nextPicture(reverse: Boolean = false) {
-        editView.save(jsonFile)
+        candidateList.save(jsonFile)
 
         if (fileIndex == fileList.size - 1) {
             return

@@ -572,10 +572,6 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
         validateRect(selectedCandidate.rect)
     }
 
-    fun save(imageFile: File?) {
-        candidateList.save(imageFile)
-    }
-
     private fun deleteRegion() {
         saveState()
 
