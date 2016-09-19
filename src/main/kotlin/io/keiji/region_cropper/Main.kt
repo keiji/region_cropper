@@ -6,13 +6,16 @@ import io.keiji.region_cropper.view.EditView
 import javafx.application.Application
 import javafx.beans.value.ObservableValue
 import javafx.embed.swing.SwingFXUtils
+import javafx.event.EventHandler
 import javafx.fxml.FXMLLoader
 import javafx.scene.Scene
 import javafx.scene.control.*
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
+import javafx.scene.input.DragEvent
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent
+import javafx.scene.input.TransferMode
 import javafx.scene.layout.BorderPane
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.Priority
@@ -204,6 +207,31 @@ class Main : App() {
         setResizeListeners(root, menuBar)
 
         val scene = Scene(root, WINDOW_WIDTH, WINDOW_HEIGHT)
+
+        scene.onDragOver = object : EventHandler<DragEvent> {
+            override fun handle(event: DragEvent) {
+                val db = event.getDragboard()
+                if (db.hasFiles()) {
+                    event.acceptTransferModes(TransferMode.COPY)
+                } else {
+                    event.consume()
+                }
+            }
+        }
+
+        scene.onDragDropped = object : EventHandler<DragEvent> {
+            override fun handle(event: DragEvent) {
+                val db = event.getDragboard()
+                var success = false
+                if (db.hasFiles()) {
+                    success = true
+                    initialize(db.files[0])
+                }
+                event.setDropCompleted(success)
+                event.consume()
+            }
+        }
+
         stage.setScene(scene)
         stage.show()
 
