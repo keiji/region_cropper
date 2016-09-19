@@ -90,7 +90,6 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
 
         addEventFilter(KeyEvent.KEY_PRESSED, { event ->
             run {
-
                 val shiftValue = if (event.isShiftDown) 1.0f else 5.0f
 
                 val labelSetting: Settings.Label = settings.labelSettings[selectedCandidate.label]

@@ -101,7 +101,6 @@ data class Settings(
             @SerializedName("color")
             val color: String
     ) {
-
         val webColor: Color
             get() {
                 return Color.web(color)

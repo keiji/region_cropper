@@ -149,7 +149,7 @@ class Main : App() {
 
         initialize(file = filePath)
 
-        val root: BorderPane = FXMLLoader.load(javaClass.classLoader.getResource("main.fxml"));
+        val root: BorderPane = FXMLLoader.load(javaClass.classLoader.getResource("main.fxml"))
         val menuBar: MenuBar = root.lookup("#menuBar") as MenuBar
 
         initMenu(menuBar, stage)
