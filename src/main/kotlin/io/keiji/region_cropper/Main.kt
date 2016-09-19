@@ -79,17 +79,17 @@ class Main : App() {
     private val editView: EditView = EditView(editViewCallback, settings)
 
     private fun generateDefaultSettings(): Settings {
-        val labelList: ArrayList<Settings.Lebel> = ArrayList<Settings.Lebel>()
-        labelList.add(Settings.Lebel(0, null, false, false, "#000000"))
-        labelList.add(Settings.Lebel(1, null, true, true, "#8FBC8F"))
-        labelList.add(Settings.Lebel(2, null, true, true, "#0000FF"))
-        labelList.add(Settings.Lebel(3, null, true, true, "#DEB887"))
-        labelList.add(Settings.Lebel(4, null, true, true, "#F0FFFF"))
-        labelList.add(Settings.Lebel(5, null, true, true, "#FFA500"))
-        labelList.add(Settings.Lebel(6, null, true, true, "#FFC0CB"))
-        labelList.add(Settings.Lebel(7, null, true, true, "#7FFFD4"))
-        labelList.add(Settings.Lebel(8, null, true, true, "#6B8E23"))
-        labelList.add(Settings.Lebel(9, null, true, true, "#F08080"))
+        val labelList: ArrayList<Settings.Label> = ArrayList<Settings.Label>()
+        labelList.add(Settings.Label(0, null, false, false, "#000000"))
+        labelList.add(Settings.Label(1, null, true, true, "#8FBC8F"))
+        labelList.add(Settings.Label(2, null, true, true, "#0000FF"))
+        labelList.add(Settings.Label(3, null, true, true, "#DEB887"))
+        labelList.add(Settings.Label(4, null, true, true, "#F0FFFF"))
+        labelList.add(Settings.Label(5, null, true, true, "#FFA500"))
+        labelList.add(Settings.Label(6, null, true, true, "#FFC0CB"))
+        labelList.add(Settings.Label(7, null, true, true, "#7FFFD4"))
+        labelList.add(Settings.Label(8, null, true, true, "#6B8E23"))
+        labelList.add(Settings.Label(9, null, true, true, "#F08080"))
         return Settings(1, "#ff0000", "#ffff00", labelList)
     }
 
@@ -255,7 +255,7 @@ class Main : App() {
 
         var index: Int = 0
         for (region: CandidateList.Region in candidateList.regions!!) {
-            val labelSetting: Settings.Lebel = settings.labelSettings[region.label]
+            val labelSetting: Settings.Label = settings.labelSettings[region.label]
 
             val labelName: String = labelSetting.name ?: String.format("label_%d", labelSetting.number)
             val filePathWithLabel = File(filePath, labelName)

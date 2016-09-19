@@ -93,7 +93,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
 
                 val shiftValue = if (event.isShiftDown) 1.0f else 5.0f
 
-                val labelSetting: Settings.Lebel = settings.labelSettings[selectedCandidate.label]
+                val labelSetting: Settings.Label = settings.labelSettings[selectedCandidate.label]
                 val editable: Boolean = labelSetting.editable
                 val deletable: Boolean = labelSetting.deletable
 

@@ -26,8 +26,8 @@ import java.io.File
 import java.nio.charset.Charset
 import java.util.*
 
-class LabelComparator : Comparator<Settings.Lebel> {
-    override fun compare(obj1: Settings.Lebel, obj2: Settings.Lebel): Int {
+class LabelComparator : Comparator<Settings.Label> {
+    override fun compare(obj1: Settings.Label, obj2: Settings.Label): Int {
         when {
             obj1.number > obj2.number -> return 1
             obj1.number < obj2.number -> return -1
@@ -51,7 +51,7 @@ data class Settings(
 
         @Expose
         @SerializedName("label_settings")
-        val labelSettings: ArrayList<Lebel>
+        val labelSettings: ArrayList<Label>
 ) {
     companion object {
         fun getInstance(filePath: String): Settings {
@@ -80,7 +80,7 @@ data class Settings(
         file.writeText(gson.toJson(this, Settings::class.java), Charset.forName("UTF-8"))
     }
 
-    data class Lebel(
+    data class Label(
             @Expose
             @SerializedName("number")
             val number: Int,
