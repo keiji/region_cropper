@@ -24,6 +24,7 @@ class MainMenuController(menuBar: MenuBar, val callback: Callback) {
 
     interface Callback {
         fun openFile()
+        fun openDirectory()
         fun close()
 
         fun undo()
@@ -42,10 +43,15 @@ class MainMenuController(menuBar: MenuBar, val callback: Callback) {
                 callback.openFile()
             }
 
+            // Open File
+            it.items[1].onAction = EventHandler<ActionEvent> {
+                callback.openDirectory()
+            }
+
             // Separator
 
             // Quit
-            it.items[2].onAction = EventHandler<ActionEvent> {
+            it.items[3].onAction = EventHandler<ActionEvent> {
                 callback.close()
             }
         }

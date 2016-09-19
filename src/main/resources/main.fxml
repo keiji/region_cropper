@@ -6,12 +6,18 @@
 <?import javafx.scene.control.SeparatorMenuItem?>
 <?import javafx.scene.layout.BorderPane?>
 
+<?import javafx.scene.image.ImageView?>
 <BorderPane id="vbox" xmlns="http://javafx.com/javafx/8.0.76-ea"
             xmlns:fx="http://javafx.com/fxml/1">
-    <center/>
+    <center>
+        <ImageView
+                fx:id="drop_view"
+                opacity="0.25"/>
+    </center>
     <top>
         <MenuBar fx:id="menuBar">
             <Menu text="File" fx:id="menu_file">
+                <MenuItem fx:id="menu_open_file" text="Open File"/>
                 <MenuItem fx:id="menu_open_directory" text="Open Directory"/>
                 <SeparatorMenuItem/>
                 <MenuItem fx:id="menu_quit" text="Quit"/>

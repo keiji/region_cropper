@@ -3,7 +3,6 @@ package io.keiji.region_cropper
 import io.keiji.region_cropper.entity.CandidateList
 import io.keiji.region_cropper.entity.Settings
 import io.keiji.region_cropper.view.EditView
-import javafx.application.Application
 import javafx.beans.value.ObservableValue
 import javafx.embed.swing.SwingFXUtils
 import javafx.event.EventHandler
@@ -11,6 +10,7 @@ import javafx.fxml.FXMLLoader
 import javafx.scene.Scene
 import javafx.scene.control.*
 import javafx.scene.image.Image
+import javafx.scene.image.ImageView
 import javafx.scene.image.WritableImage
 import javafx.scene.input.DragEvent
 import javafx.scene.input.KeyCode
@@ -19,6 +19,7 @@ import javafx.scene.input.TransferMode
 import javafx.scene.layout.BorderPane
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.Priority
+import javafx.stage.DirectoryChooser
 import javafx.stage.FileChooser
 import javafx.stage.Stage
 import tornadofx.App
@@ -53,11 +54,16 @@ const val SETTING_FILE_PATH = "./settings.json"
 class Main : App() {
 
     private lateinit var stage: Stage
-    private lateinit var fileList: List<String>
+
+    private lateinit var fileList: List<File>
     private var fileIndex: Int = 0
 
-    private lateinit var fileName: String
-    private lateinit var baseDir: File
+    private val file: File
+        get() {
+            return fileList[fileIndex]
+        }
+
+
     private lateinit var jsonFile: File
 
     private lateinit var imageData: Image
@@ -71,6 +77,13 @@ class Main : App() {
             }
         }
 
+        override fun openDirectory() {
+            val path = showDirectoryChooser()
+            if (path != null) {
+                initialize(path.listFiles().toList())
+            }
+        }
+
         override fun close() {
             stage.close()
         }
@@ -80,7 +93,7 @@ class Main : App() {
         }
 
         override fun quickCrop() {
-            cropTo(baseDir)
+            cropTo(file.parentFile)
         }
 
         override fun cropTo() {
@@ -117,9 +130,9 @@ class Main : App() {
         }
     }
 
-    private var settings: Settings = generateDefaultSettings()
-
-    private val editView: EditView = EditView(editViewCallback, settings)
+    private lateinit var settings: Settings
+    private lateinit var editView: EditView
+    private var editViewInitialized: Boolean = false
 
     private fun generateDefaultSettings(): Settings {
         val labelList: ArrayList<Settings.Label> = ArrayList<Settings.Label>()
@@ -136,9 +149,14 @@ class Main : App() {
         return Settings(1, "#ff0000", "#ffff00", labelList)
     }
 
+    private lateinit var dropImage: Image
+
     override fun init() {
+        dropImage = Image(javaClass.classLoader.getResourceAsStream("ic_image_black_48dp.png"))
+
         val settingPath: File = File(SETTING_FILE_PATH)
         if (!settingPath.exists()) {
+            settings = generateDefaultSettings()
             settings.save(settingPath)
         } else {
             settings = Settings.getInstance(SETTING_FILE_PATH)
@@ -146,49 +164,54 @@ class Main : App() {
     }
 
     fun initialize(file: File) {
-        var filePath: File = file
-        baseDir = if (filePath.isDirectory) filePath else filePath.parentFile
-        fileList = baseDir.list().filter(
+        fileList = file.parentFile.listFiles().filter(
                 {
-                    it.toLowerCase().endsWith(".png")
-                            || it.toLowerCase().endsWith(".jpg")
-                            || it.toLowerCase().endsWith(".jpeg")
+                    it.name.toLowerCase().endsWith(".png")
+                            || it.name.toLowerCase().endsWith(".jpg")
+                            || it.name.toLowerCase().endsWith(".jpeg")
                 })
 
         Collections.sort(fileList, { a, b ->
-            a.toLowerCase().compareTo(b.toLowerCase())
+            a.absolutePath.toLowerCase().compareTo(b.absolutePath.toLowerCase())
         })
 
-        if (filePath.isDirectory) {
-            fileIndex = 0
-            filePath = File(baseDir, fileList[fileIndex])
-        } else {
-            fileIndex = fileList.indexOf(filePath.name)
-        }
+        fileIndex = if (file.isDirectory) 0 else fileList.indexOf(file)
 
-        loadFile(filePath)
+        loadFile(fileList[fileIndex])
+    }
+
+    fun initialize(files: List<File>) {
+        fileList = files
+
+        Collections.sort(fileList, { a, b ->
+            a.absolutePath.toLowerCase().compareTo(b.absolutePath.toLowerCase())
+        })
+
+        fileIndex = 0
+        loadFile(fileList[fileIndex])
     }
 
     private lateinit var menuController: MainMenuController
 
+    private fun findAllFiles(files: List<File>): List<File> {
+        val resultFileList = ArrayList<File>()
+
+        for (file in files) {
+            if (file.isFile) {
+                resultFileList.add(file)
+            } else if (file.isDirectory) {
+                resultFileList.addAll(findAllFiles(file.listFiles().toList()))
+            }
+        }
+
+        return resultFileList
+    }
+
+    private lateinit var borderPane: BorderPane
+    private lateinit var menuBar: MenuBar
+
     override fun start(stage: Stage) {
         this.stage = stage
-
-        val parameters: Application.Parameters = parameters
-
-        val filePath: File?
-        if (parameters.unnamed.size > 0) {
-            filePath = File(parameters.unnamed[0])
-        } else {
-            filePath = showFileChooser()
-        }
-
-        if (filePath == null) {
-            stage.close()
-            return
-        }
-
-        initialize(file = filePath)
 
         stage.addEventFilter(KeyEvent.KEY_PRESSED, { event ->
             run {
@@ -199,27 +222,58 @@ class Main : App() {
             }
         })
 
-        val root: BorderPane = FXMLLoader.load(javaClass.classLoader.getResource("main.fxml"))
-        val menuBar: MenuBar = root.lookup("#menuBar") as MenuBar
+        borderPane = FXMLLoader.load(javaClass.classLoader.getResource("main.fxml"))
+
+        val dropView: ImageView = borderPane.lookup("#drop_view") as ImageView
+        dropView.image = dropImage
+
+        menuBar = borderPane.lookup("#menuBar") as MenuBar
 
         menuController = MainMenuController(menuBar, menuCallback)
 
-        setResizeListeners(root, menuBar)
+        setResizeListeners(borderPane, menuBar)
 
-        val scene = Scene(root, WINDOW_WIDTH, WINDOW_HEIGHT)
+        val scene = Scene(borderPane, WINDOW_WIDTH, WINDOW_HEIGHT)
 
-        val imageFileFilter: (File) -> Boolean = {
-            it.name.toLowerCase().endsWith(".png")
-                    || it.name.toLowerCase().endsWith(".jpg")
-                    || it.name.toLowerCase().endsWith(".jpeg")
+        initDragAndDrop(scene)
+
+        stage.title = "Region Cropper"
+        stage.setScene(scene)
+        stage.show()
+    }
+
+    private fun showEditView() {
+        if (editViewInitialized) {
+            return
         }
 
+        editView = EditView(editViewCallback, settings)
+
+        borderPane.center = editView
+        editView.let {
+            it.settings = settings
+            it.height = borderPane.height - menuBar.height
+            it.width = borderPane.width
+            it.setFocusTraversable(true)
+            it.requestFocus()
+        }
+
+        editViewInitialized = true
+    }
+
+    private fun initDragAndDrop(scene: Scene) {
         scene.onDragOver = object : EventHandler<DragEvent> {
             override fun handle(event: DragEvent) {
                 val db = event.getDragboard()
                 if (db.hasFiles()) {
-                    val imageFiles = db.files.filter(imageFileFilter)
-                    if (imageFiles.size > 0) {
+                    val files = db.files.filter {
+                        it.isDirectory
+                                || it.name.toLowerCase().endsWith(".png")
+                                || it.name.toLowerCase().endsWith(".jpg")
+                                || it.name.toLowerCase().endsWith(".jpeg")
+                    }
+
+                    if (files.size > 0) {
                         event.acceptTransferModes(TransferMode.COPY)
                     }
                 } else {
@@ -233,30 +287,25 @@ class Main : App() {
                 val db = event.getDragboard()
                 var success = false
                 if (db.hasFiles()) {
-                    val imageFiles = db.files.filter(imageFileFilter)
-                    if (imageFiles.size > 0) {
+                    val imageFiles = findAllFiles(db.files).filter({
+                        it.name.toLowerCase().endsWith(".png")
+                                || it.name.toLowerCase().endsWith(".jpg")
+                                || it.name.toLowerCase().endsWith(".jpeg")
+
+                    })
+
+                    if (imageFiles.size == 1) {
                         success = true
                         initialize(imageFiles[0])
+                    } else if (imageFiles.size > 1) {
+                        success = true
+                        initialize(imageFiles)
                     }
                 }
                 event.setDropCompleted(success)
                 event.consume()
             }
         }
-
-        stage.setScene(scene)
-        stage.show()
-
-        root.center = editView
-        editView.let {
-            it.settings = settings
-            it.height = root.height - menuBar.height
-            it.width = root.width
-            it.onResize()
-            it.setFocusTraversable(true)
-            it.requestFocus()
-        }
-
     }
 
     private fun setResizeListeners(root: BorderPane, menuBar: MenuBar) {
@@ -268,16 +317,20 @@ class Main : App() {
                 {
                     observableValue: ObservableValue<out Number>, oldValue: Number, newValue: Number ->
                     run {
-                        editView.width = root.width
-                        editView.onResize()
+                        if (editViewInitialized) {
+                            editView.width = root.width
+                            editView.onResize()
+                        }
                     }
                 })
         root.heightProperty().addListener(
                 {
                     observableValue: ObservableValue<out Number>, oldValue: Number, newValue: Number ->
                     run {
-                        editView.height = root.height - menuBar.height
-                        editView.onResize()
+                        if (editViewInitialized) {
+                            editView.height = root.height - menuBar.height
+                            editView.onResize()
+                        }
                     }
                 })
     }
@@ -308,7 +361,7 @@ class Main : App() {
             val writableImage = WritableImage(imageData.pixelReader,
                     rect.left.toInt(), rect.top.toInt(),
                     rect.width().toInt(), rect.height().toInt())
-            val file = File(filePathWithLabel, String.format("%s-%d.png", fileName, index))
+            val file = File(filePathWithLabel, String.format("%s-%d.png", file, index))
             ImageIO.write(SwingFXUtils.fromFXImage(writableImage, null), "png", file);
             index++
         }
@@ -368,10 +421,18 @@ class Main : App() {
     private fun showFileChooser(): File? {
         val chooser = FileChooser()
         chooser.let {
-            it.setTitle("Select File or Directory")
+            it.setTitle("Select Files")
             it.extensionFilters.add(FileChooser.ExtensionFilter("Image files", "*.png", "*.jpg", "*.jpeg"))
         }
         return chooser.showOpenDialog(stage)
+    }
+
+    private fun showDirectoryChooser(): File? {
+        val chooser = DirectoryChooser()
+        chooser.let {
+            it.setTitle("Select Directory")
+        }
+        return chooser.showDialog(stage)
     }
 
     private fun showResetDialog() {
@@ -406,8 +467,7 @@ class Main : App() {
         }
 
         fileIndex--
-        val previousFile: File = File(baseDir, fileList[fileIndex])
-        loadFile(previousFile, reverse)
+        loadFile(fileList[fileIndex], reverse)
     }
 
     private fun nextPicture(reverse: Boolean = false) {
@@ -418,15 +478,14 @@ class Main : App() {
         }
 
         fileIndex++
-        val nextFile: File = File(baseDir, fileList[fileIndex])
-        loadFile(nextFile, reverse)
+        loadFile(fileList[fileIndex], reverse)
     }
 
     private fun loadFile(imageFile: File, reverse: Boolean = false) {
         val nameAndExtension: List<String> = imageFile.name.split(".")
-        fileName = nameAndExtension[0]
+        val fileName = nameAndExtension[0]
 
-        jsonFile = File(baseDir, String.format("%s.json", fileName))
+        jsonFile = File(file.parentFile, String.format("%s.json", fileName))
         if (jsonFile.exists()) {
             candidateList = CandidateList.getInstance(jsonFile.absolutePath)
         } else {
@@ -434,6 +493,8 @@ class Main : App() {
         }
 
         imageData = Image(imageFile.toURI().toString())
+
+        showEditView()
 
         editView.setData(imageData, candidateList, reverse)
 
