@@ -16,7 +16,9 @@
                 <SeparatorMenuItem/>
                 <MenuItem fx:id="menu_quit" text="Quit"/>
             </Menu>
-            <Menu text="Crop" fx:id="menu_crop">
+            <Menu text="Edit" fx:id="menu_edit">
+                <MenuItem text="Undo"/>
+                <SeparatorMenuItem/>
                 <MenuItem text="Quick crop"/>
                 <MenuItem text="Crop to..."/>
             </Menu>

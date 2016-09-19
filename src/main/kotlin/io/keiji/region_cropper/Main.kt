@@ -71,6 +71,10 @@ class Main : App() {
             stage.close()
         }
 
+        override fun undo() {
+            editView.restoreState()
+        }
+
         override fun quickCrop() {
             cropTo(baseDir)
         }

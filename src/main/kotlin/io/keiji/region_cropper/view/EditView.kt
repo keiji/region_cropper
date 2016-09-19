@@ -243,7 +243,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
         }
     }
 
-    private fun restoreState() {
+    fun restoreState() {
         if (history.size == 0) {
             return
         }

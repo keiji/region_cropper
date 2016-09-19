@@ -26,6 +26,7 @@ class MainMenuController(menuBar: MenuBar, val callback: Callback) {
         fun openFile()
         fun close()
 
+        fun undo()
         fun quickCrop()
         fun cropTo()
 
@@ -49,15 +50,22 @@ class MainMenuController(menuBar: MenuBar, val callback: Callback) {
             }
         }
 
-        // Crop
+        // Edit
         menuBar.menus[1].let {
-            // Quick Crop
+            // Undo
             it.items[0].onAction = EventHandler<ActionEvent> {
+                callback.undo()
+            }
+
+            // Separator
+
+            // Quick Crop
+            it.items[2].onAction = EventHandler<ActionEvent> {
                 callback.quickCrop()
             }
 
             // Crop to
-            it.items[1].onAction = EventHandler<ActionEvent> {
+            it.items[3].onAction = EventHandler<ActionEvent> {
                 callback.cropTo()
             }
         }
