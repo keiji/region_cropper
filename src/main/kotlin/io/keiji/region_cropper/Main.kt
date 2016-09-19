@@ -16,7 +16,7 @@ import javafx.scene.image.WritableImage
 import javafx.scene.layout.BorderPane
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.Priority
-import javafx.stage.DirectoryChooser
+import javafx.stage.FileChooser
 import javafx.stage.Stage
 import tornadofx.App
 import java.io.File
@@ -112,6 +112,10 @@ class Main : App() {
                             || it.toLowerCase().endsWith(".jpeg")
                 })
 
+        Collections.sort(fileList, { a, b ->
+            a.toLowerCase().compareTo(b.toLowerCase())
+        })
+
         if (filePath.isDirectory) {
             fileIndex = 0
             filePath = File(baseDir, fileList[fileIndex])
@@ -131,7 +135,7 @@ class Main : App() {
         if (parameters.unnamed.size > 0) {
             filePath = File(parameters.unnamed[0])
         } else {
-            filePath = showDirectoryChooser()
+            filePath = showFileChooser()
         }
 
         if (filePath == null) {
@@ -192,7 +196,7 @@ class Main : App() {
         menuBar.menus[0].let {
             // Open Directory
             it.items[0].onAction = EventHandler<ActionEvent> {
-                val filePath = showDirectoryChooser()
+                val filePath = showFileChooser()
                 if (filePath != null) {
                     initialize(filePath)
                 }
@@ -215,7 +219,7 @@ class Main : App() {
 
             // Crop to
             it.items[1].onAction = EventHandler<ActionEvent> {
-                val filePath = showDirectoryChooser()
+                val filePath = showFileChooser()
                 if (filePath != null) {
                     cropTo(filePath)
                 }
