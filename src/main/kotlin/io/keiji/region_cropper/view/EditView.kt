@@ -31,6 +31,7 @@ import java.io.File
 import java.util.*
 
 const val MIN_REGION_SIZE = 10.0f
+const val LIMIT_SAVE_STATE = 200
 
 private val NOT_SELECTED = CandidateList.Region(
         -1.0, 0,
@@ -70,6 +71,8 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
 
     lateinit var imageData: Image
     lateinit var candidateList: CandidateList
+
+    val history: ArrayList<CandidateList> = ArrayList()
 
     var selectedCandidate: CandidateList.Region = NOT_SELECTED
     private var selectedIndex: Int = 0
@@ -129,6 +132,10 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
                     event.code == KeyCode.TAB -> {
                         selectNextRegion()
                     }
+
+                    event.isShortcutDown && event.code == KeyCode.Z -> restoreState()
+                    event.isControlDown && event.code == KeyCode.Z -> restoreState()
+
                     event.code == KeyCode.END -> callback.onNextFile()
                     event.code == KeyCode.HOME -> callback.onPreviousFile()
                     deletable && event.code == KeyCode.BACK_SPACE -> deleteRegion()
@@ -229,10 +236,39 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
         })
     }
 
+    private fun saveState() {
+        history.add(candidateList.deepCopy())
+        while (history.size > LIMIT_SAVE_STATE) {
+            history.removeAt(0)
+        }
+    }
+
+    private fun restoreState() {
+        if (history.size == 0) {
+            return
+        }
+
+        candidateList = history.removeAt(history.size - 1)
+
+        if (selectedIndex >= candidateList.regions!!.size
+                || (selectedIndex < 0 && candidateList.regions!!.size > 0)) {
+            selectedIndex = candidateList.regions!!.size - 1
+        }
+
+        println(selectedIndex)
+
+        selectedCandidate = if (selectedIndex < 0) NOT_SELECTED else candidateList.regions!![selectedIndex]
+
+        isInvalidated = true
+        draw()
+    }
+
     private fun setLabel(label: Int, moveNext: Boolean = false) {
         if (selectedCandidate === NOT_SELECTED) {
             return
         }
+
+        saveState()
 
         selectedCandidate.label = label
 
@@ -479,41 +515,57 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
     }
 
     private fun moveToLeft(size: Float) {
+        saveState()
+
         selectedCandidate.rect.offset(-size, 0f)
         validateRect(selectedCandidate.rect)
     }
 
     private fun moveToTop(size: Float) {
+        saveState()
+
         selectedCandidate.rect.offset(0f, -size)
         validateRect(selectedCandidate.rect)
     }
 
     private fun moveToRight(size: Float) {
+        saveState()
+
         selectedCandidate.rect.offset(size, 0f)
         validateRect(selectedCandidate.rect)
     }
 
     private fun moveToBottom(size: Float) {
+        saveState()
+
         selectedCandidate.rect.offset(0f, size)
         validateRect(selectedCandidate.rect)
     }
 
     private fun expandToLeft(size: Float) {
+        saveState()
+
         selectedCandidate.rect.left -= size
         validateRect(selectedCandidate.rect)
     }
 
     private fun expandToTop(size: Float) {
+        saveState()
+
         selectedCandidate.rect.top -= size
         validateRect(selectedCandidate.rect)
     }
 
     private fun expandToRight(size: Float) {
+        saveState()
+
         selectedCandidate.rect.right += size
         validateRect(selectedCandidate.rect)
     }
 
     private fun expandToBottom(size: Float) {
+        saveState()
+
         selectedCandidate.rect.bottom += size
         validateRect(selectedCandidate.rect)
     }
@@ -523,6 +575,8 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
     }
 
     private fun deleteRegion() {
+        saveState()
+
         candidateList.regions!!.remove(selectedCandidate)
 
         if (selectedIndex > candidateList.regions!!.size - 1) {
@@ -538,6 +592,8 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
     }
 
     private fun addRect(rect: CandidateList.Region.Rect) {
+        saveState()
+
         selectedCandidate = CandidateList.Region(1.0, settings.defaultLabelNumber, rect)
         candidateList.regions!!.add(selectedCandidate)
 
@@ -548,6 +604,8 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
     }
 
     fun reset(reverse: Boolean = false) {
+        saveState()
+
         if (candidateList.regions === null) {
             candidateList.regions = ArrayList<CandidateList.Region>()
         } else {

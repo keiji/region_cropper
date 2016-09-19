@@ -79,6 +79,15 @@ data class CandidateList(
         Collections.sort(regions, PositionComparator())
     }
 
+    fun deepCopy(): CandidateList {
+        val copiedRegions = ArrayList<CandidateList.Region>()
+        for (region: CandidateList.Region in regions!!) {
+            val copiedRect = region.rect.copy()
+            copiedRegions.add(CandidateList.Region(region.probability, region.label, copiedRect))
+        }
+        return copy(regions = copiedRegions)
+    }
+
     data class DetectedFaces(
             @SerializedName("model_version")
             val modelVersion: String,
