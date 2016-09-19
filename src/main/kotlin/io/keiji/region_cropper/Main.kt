@@ -212,6 +212,7 @@ class Main : App() {
         stage.addEventFilter(KeyEvent.KEY_PRESSED, { event ->
             run {
                 when {
+                    event.code == KeyCode.ESCAPE -> onReset(event.isControlDown)
                     event.isShortcutDown && event.code == KeyCode.S -> candidateList.save(jsonFile)
                     event.isShortcutDown && event.code == KeyCode.W -> stage.close()
                 }
@@ -329,6 +330,18 @@ class Main : App() {
                         }
                     }
                 })
+    }
+
+    fun onReset(isControlDown: Boolean) {
+        if (!editViewInitialized) {
+            return
+        }
+
+        if (isControlDown) {
+            editView.reset()
+            return
+        }
+        showResetDialog()
     }
 
     private fun cropTo(path: File) {

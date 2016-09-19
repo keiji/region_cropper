@@ -82,7 +82,6 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
     interface Callback {
         fun onNextFile(reverse: Boolean = false)
         fun onPreviousFile(reverse: Boolean = false)
-        fun onReset(isControlDown: Boolean = false)
     }
 
     enum class Mode {
@@ -141,7 +140,6 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
                 when {
                     event.isShiftDown && event.code == KeyCode.SPACE -> isFocus = Focus.Locked
                     event.code == KeyCode.SPACE -> isFocus = Focus.On
-                    event.code == KeyCode.ESCAPE -> callback.onReset(event.isControlDown)
                     !editable -> {
                         /* do nothing */
                     }
