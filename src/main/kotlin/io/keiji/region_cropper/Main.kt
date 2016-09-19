@@ -507,7 +507,7 @@ class Main : App() {
 
         editView.setData(imageData, candidateList, reverse)
 
-        stage.title = String.format("%s - %d/%d", imageFile.name, (fileIndex + 1), fileList.size)
+        stage.title = String.format("%s - %,3d / %,3d", imageFile.name, (fileIndex + 1), fileList.size)
     }
 
     private fun createdAt(): String {
