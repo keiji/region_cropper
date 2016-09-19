@@ -80,7 +80,7 @@ class Main : App() {
         override fun openDirectory() {
             val path = showDirectoryChooser()
             if (path != null) {
-                initialize(path.listFiles().toList())
+                initialize(findAllFiles(path.listFiles().toList()))
             }
         }
 
@@ -119,14 +119,6 @@ class Main : App() {
 
         override fun onPreviousFile(reverse: Boolean) {
             prevPicture(reverse)
-        }
-
-        override fun onReset(isControlDown: Boolean) {
-            if (isControlDown) {
-                editView.reset()
-                return
-            }
-            showResetDialog()
         }
     }
 
@@ -181,7 +173,11 @@ class Main : App() {
     }
 
     fun initialize(files: List<File>) {
-        fileList = files
+        fileList = files.filter {
+            it.name.toLowerCase().endsWith(".png")
+                    || it.name.toLowerCase().endsWith(".jpg")
+                    || it.name.toLowerCase().endsWith(".jpeg")
+        }
 
         Collections.sort(fileList, { a, b ->
             a.absolutePath.toLowerCase().compareTo(b.absolutePath.toLowerCase())
