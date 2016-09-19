@@ -63,6 +63,8 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
 
     var isFocus: Focus = Focus.Off
 
+    private var isInvalidated: Boolean = true
+
     private val draggingStartPoint: Point = Point(0.0, 0.0)
     private var draggingRect: CandidateList.Region.Rect? = null
 
@@ -175,6 +177,8 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
                     event.code == KeyCode.RIGHT -> moveToRight(shiftValue)
                     event.code == KeyCode.DOWN -> moveToBottom(shiftValue)
                 }
+
+                isInvalidated = true
                 draw()
             }
         })
@@ -187,6 +191,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
                     event.isAltDown -> mode = Mode.Expand
                     else -> mode = Mode.Normal
                 }
+                isInvalidated = true
                 draw()
             }
         })
@@ -205,12 +210,16 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
                         draggingRect!!.right = Math.round(Math.max(draggingStartPoint.x, tempPoint.x)).toFloat()
                         draggingRect!!.top = Math.round(Math.min(draggingStartPoint.y, tempPoint.y)).toFloat()
                         draggingRect!!.bottom = Math.round(Math.max(draggingStartPoint.y, tempPoint.y)).toFloat()
+
+                        isInvalidated = true
                     }
                     event.button == MouseButton.PRIMARY && event.eventType == MouseEvent.MOUSE_RELEASED -> {
                         if (draggingRect != null) {
                             validateRect(draggingRect!!)
                             addRect(draggingRect!!)
                             draggingRect = null
+
+                            isInvalidated = true
                         }
                     }
                     else -> convertLogicalPoint(event.sceneX, event.sceneY, reticle)
@@ -280,10 +289,17 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
         paddingHorizontal = (width - (imageData.width * scale)) / 2
         paddingVertical = (height - (imageData.height * scale)) / 2
 
+        isInvalidated = true
         draw()
     }
 
     fun draw() {
+        if (!isInvalidated) {
+            return
+        }
+
+        isInvalidated = false
+
         val gc = graphicsContext2D
         gc.clearRect(0.0, 0.0, width, height)
 
