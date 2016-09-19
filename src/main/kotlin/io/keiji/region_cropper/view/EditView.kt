@@ -44,7 +44,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
     interface Callback {
         fun onNextFile(reverse: Boolean = false)
         fun onPreviousFile(reverse: Boolean = false)
-        fun onShowResetConfirmationDialog()
+        fun onReset(isControlDown: Boolean = false)
     }
 
     enum class Mode {
@@ -100,6 +100,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
                 when {
                     event.isShiftDown && event.code == KeyCode.SPACE -> isFocus = Focus.Locked
                     event.code == KeyCode.SPACE -> isFocus = Focus.On
+                    event.code == KeyCode.ESCAPE -> callback.onReset(event.isControlDown)
                     !editable -> {
                         /* do nothing */
                     }
@@ -127,7 +128,6 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
                     event.code == KeyCode.TAB -> {
                         selectNextRegion()
                     }
-                    event.code == KeyCode.ESCAPE -> callback.onShowResetConfirmationDialog()
                     event.code == KeyCode.END -> callback.onNextFile()
                     event.code == KeyCode.HOME -> callback.onPreviousFile()
                     deletable && event.code == KeyCode.BACK_SPACE -> deleteRegion()

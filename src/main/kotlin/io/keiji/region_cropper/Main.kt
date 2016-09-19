@@ -69,7 +69,11 @@ class Main : App() {
             prevPicture(reverse)
         }
 
-        override fun onShowResetConfirmationDialog() {
+        override fun onReset(isControlDown: Boolean) {
+            if (isControlDown) {
+                editView.reset()
+                return
+            }
             showResetDialog()
         }
     }
@@ -326,17 +330,25 @@ class Main : App() {
         alert.showAndWait()
     }
 
-    private fun showDirectoryChooser(): File? {
-        val chooser = DirectoryChooser()
+    private fun showFileChooser(): File? {
+        val chooser = FileChooser()
         chooser.let {
-            it.setTitle("Select Directory")
+            it.setTitle("Select File or Directory")
+            it.extensionFilters.add(FileChooser.ExtensionFilter("Image files", "*.png", "*.jpg", "*.jpeg"))
         }
-        return chooser.showDialog(stage)
+        return chooser.showOpenDialog(stage)
     }
 
     private fun showResetDialog() {
         Alert(Alert.AlertType.CONFIRMATION).let {
-            it.setContentText("Discard changes?")
+            val message: String
+            if (candidateList.detectedFaces != null) {
+                message = "Clear regions?"
+            } else {
+                message = "Discard changes?"
+            }
+
+            it.setContentText(message)
             it.setHeaderText(null)
 
             val okButton: Button = it.dialogPane.lookupButton(ButtonType.OK) as Button
