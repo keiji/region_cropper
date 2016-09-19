@@ -208,11 +208,20 @@ class Main : App() {
 
         val scene = Scene(root, WINDOW_WIDTH, WINDOW_HEIGHT)
 
+        val imageFileFilter: (File) -> Boolean = {
+            it.name.toLowerCase().endsWith(".png")
+                    || it.name.toLowerCase().endsWith(".jpg")
+                    || it.name.toLowerCase().endsWith(".jpeg")
+        }
+
         scene.onDragOver = object : EventHandler<DragEvent> {
             override fun handle(event: DragEvent) {
                 val db = event.getDragboard()
                 if (db.hasFiles()) {
-                    event.acceptTransferModes(TransferMode.COPY)
+                    val imageFiles = db.files.filter(imageFileFilter)
+                    if (imageFiles.size > 0) {
+                        event.acceptTransferModes(TransferMode.COPY)
+                    }
                 } else {
                     event.consume()
                 }
@@ -224,8 +233,11 @@ class Main : App() {
                 val db = event.getDragboard()
                 var success = false
                 if (db.hasFiles()) {
-                    success = true
-                    initialize(db.files[0])
+                    val imageFiles = db.files.filter(imageFileFilter)
+                    if (imageFiles.size > 0) {
+                        success = true
+                        initialize(imageFiles[0])
+                    }
                 }
                 event.setDropCompleted(success)
                 event.consume()
