@@ -42,6 +42,43 @@ private data class Point(var x: Double, var y: Double) {
 
 class EditView(val callback: Callback, var settings: Settings) : Canvas() {
 
+    data class History(
+            var startIndex: Int = 0,
+            var index: Int = 0,
+            var histories: Array<History.State> = Array(LIMIT_SAVE_STATE, { History.State(0) })) {
+
+        data class State(var selectedRegionIndex: Int) {
+            lateinit var regionList: CandidateList
+        }
+
+        fun clear() {
+            startIndex = 0
+            index = 0
+        }
+
+        fun push(selectedRegionIndex: Int, candidateList: CandidateList) {
+            val state = histories[index]
+            state.selectedRegionIndex = selectedRegionIndex
+            state.regionList = candidateList
+
+            index++
+            if (index >= histories.size) {
+                index %= histories.size
+                startIndex = startIndex++ % histories.size
+            }
+        }
+
+        fun pop(): State? {
+            index--
+            if (index < startIndex) {
+                index = startIndex
+                return null
+            }
+
+            return histories[index]
+        }
+    }
+
     interface Callback {
         fun onNextFile(reverse: Boolean = false)
         fun onPreviousFile(reverse: Boolean = false)
@@ -72,7 +109,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
     lateinit var imageData: Image
     lateinit var candidateList: CandidateList
 
-    val history: ArrayList<CandidateList> = ArrayList()
+    private val history: History = History()
 
     var selectedCandidate: CandidateList.Region = NOT_SELECTED
     private var selectedIndex: Int = 0
@@ -171,18 +208,18 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
                     }
 
                     event.isShiftDown && event.code == KeyCode.D -> deleteRegion()
-                    event.isShortcutDown && event.code == KeyCode.LEFT -> expandToRight(-shiftValue)
-                    event.isShortcutDown && event.code == KeyCode.UP -> expandToBottom(-shiftValue)
-                    event.isShortcutDown && event.code == KeyCode.RIGHT -> expandToLeft(-shiftValue)
-                    event.isShortcutDown && event.code == KeyCode.DOWN -> expandToTop(-shiftValue)
-                    event.isAltDown && event.code == KeyCode.LEFT -> expandToLeft(shiftValue)
-                    event.isAltDown && event.code == KeyCode.UP -> expandToTop(shiftValue)
-                    event.isAltDown && event.code == KeyCode.RIGHT -> expandToRight(shiftValue)
-                    event.isAltDown && event.code == KeyCode.DOWN -> expandToBottom(shiftValue)
-                    event.code == KeyCode.LEFT -> moveToLeft(shiftValue)
-                    event.code == KeyCode.UP -> moveToTop(shiftValue)
-                    event.code == KeyCode.RIGHT -> moveToRight(shiftValue)
-                    event.code == KeyCode.DOWN -> moveToBottom(shiftValue)
+                    event.isShortcutDown && event.code == KeyCode.LEFT -> expand(right = -shiftValue)
+                    event.isShortcutDown && event.code == KeyCode.UP -> expand(bottom = -shiftValue)
+                    event.isShortcutDown && event.code == KeyCode.RIGHT -> expand(left = shiftValue)
+                    event.isShortcutDown && event.code == KeyCode.DOWN -> expand(top = shiftValue)
+                    event.isAltDown && event.code == KeyCode.LEFT -> expand(left = -shiftValue)
+                    event.isAltDown && event.code == KeyCode.UP -> expand(top = -shiftValue)
+                    event.isAltDown && event.code == KeyCode.RIGHT -> expand(right = shiftValue)
+                    event.isAltDown && event.code == KeyCode.DOWN -> expand(bottom = shiftValue)
+                    event.code == KeyCode.LEFT -> move(-shiftValue, 0.0f)
+                    event.code == KeyCode.UP -> move(0.0f, -shiftValue)
+                    event.code == KeyCode.RIGHT -> move(shiftValue, 0.0f)
+                    event.code == KeyCode.DOWN -> move(0.0f, shiftValue)
                 }
 
                 isInvalidated = true
@@ -237,18 +274,17 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
     }
 
     private fun saveState() {
-        history.add(candidateList.deepCopy())
-        while (history.size > LIMIT_SAVE_STATE) {
-            history.removeAt(0)
-        }
+        history.push(selectedIndex, candidateList.deepCopy())
     }
 
     fun restoreState() {
-        if (history.size == 0) {
+        val state: History.State? = history.pop()
+        if (state == null) {
             return
         }
 
-        candidateList = history.removeAt(history.size - 1)
+        selectedIndex = state.selectedRegionIndex
+        candidateList = state.regionList
 
         if (selectedIndex >= candidateList.regions!!.size
                 || (selectedIndex < 0 && candidateList.regions!!.size > 0)) {
@@ -290,6 +326,8 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
     }
 
     fun setData(image: Image, candidateList: CandidateList, reverse: Boolean) {
+        history.clear()
+
         imageData = image
         this.candidateList = candidateList
 
@@ -472,10 +510,11 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
     private fun selectNextRegion(): Boolean {
         if (selectedIndex >= candidateList.regions!!.size - 1) {
             return false
-        } else {
-            selectedIndex++
         }
 
+        saveState()
+
+        selectedIndex++
         selectedCandidate = candidateList.regions!![selectedIndex]
         return true
     }
@@ -484,10 +523,11 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
         if (selectedIndex <= 0) {
             selectedIndex = 0
             return false
-        } else {
-            selectedIndex--
         }
 
+        saveState()
+
+        selectedIndex--
         selectedCandidate = candidateList.regions!![selectedIndex]
         return true
     }
@@ -514,59 +554,21 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
         }
     }
 
-    private fun moveToLeft(size: Float) {
+    private fun move(x: Float, y: Float) {
         saveState()
 
-        selectedCandidate.rect.offset(-size, 0f)
+        selectedCandidate.rect.offset(x, y)
         validateRect(selectedCandidate.rect)
     }
 
-    private fun moveToTop(size: Float) {
+    private fun expand(left: Float = 0.0f, top: Float = 0.0f, right: Float = 0.0f, bottom: Float = 0.0f) {
         saveState()
 
-        selectedCandidate.rect.offset(0f, -size)
-        validateRect(selectedCandidate.rect)
-    }
+        selectedCandidate.rect.left += left
+        selectedCandidate.rect.top += top
+        selectedCandidate.rect.right += right
+        selectedCandidate.rect.bottom += bottom
 
-    private fun moveToRight(size: Float) {
-        saveState()
-
-        selectedCandidate.rect.offset(size, 0f)
-        validateRect(selectedCandidate.rect)
-    }
-
-    private fun moveToBottom(size: Float) {
-        saveState()
-
-        selectedCandidate.rect.offset(0f, size)
-        validateRect(selectedCandidate.rect)
-    }
-
-    private fun expandToLeft(size: Float) {
-        saveState()
-
-        selectedCandidate.rect.left -= size
-        validateRect(selectedCandidate.rect)
-    }
-
-    private fun expandToTop(size: Float) {
-        saveState()
-
-        selectedCandidate.rect.top -= size
-        validateRect(selectedCandidate.rect)
-    }
-
-    private fun expandToRight(size: Float) {
-        saveState()
-
-        selectedCandidate.rect.right += size
-        validateRect(selectedCandidate.rect)
-    }
-
-    private fun expandToBottom(size: Float) {
-        saveState()
-
-        selectedCandidate.rect.bottom += size
         validateRect(selectedCandidate.rect)
     }
 
