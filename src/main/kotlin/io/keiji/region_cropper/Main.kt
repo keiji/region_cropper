@@ -3,11 +3,10 @@ package io.keiji.region_cropper
 import io.keiji.region_cropper.entity.CandidateList
 import io.keiji.region_cropper.entity.Settings
 import io.keiji.region_cropper.view.EditView
+import io.keiji.region_cropper.MainMenuController
 import javafx.application.Application
 import javafx.beans.value.ObservableValue
 import javafx.embed.swing.SwingFXUtils
-import javafx.event.ActionEvent
-import javafx.event.EventHandler
 import javafx.fxml.FXMLLoader
 import javafx.scene.Scene
 import javafx.scene.control.*
@@ -59,6 +58,38 @@ class Main : App() {
 
     private lateinit var imageData: Image
     private lateinit var candidateList: CandidateList
+
+    private val menuCallback = object : MainMenuController.Callback {
+        override fun openFile() {
+            val filePath = showFileChooser()
+            if (filePath != null) {
+                initialize(filePath)
+            }
+        }
+
+        override fun close() {
+            stage.close()
+        }
+
+        override fun quickCrop() {
+            cropTo(baseDir)
+        }
+
+        override fun cropTo() {
+            val filePath = showFileChooser()
+            if (filePath != null) {
+                cropTo(filePath)
+            }
+        }
+
+        override fun licenseDialog() {
+            showLicensesDialog()
+        }
+
+        override fun aboutDialog() {
+            showAboutDialog()
+        }
+    }
 
     private val editViewCallback = object : EditView.Callback {
         override fun onNextFile(reverse: Boolean) {
@@ -130,6 +161,8 @@ class Main : App() {
         loadFile(filePath)
     }
 
+    private lateinit var menuController: MainMenuController
+
     override fun start(stage: Stage) {
         this.stage = stage
 
@@ -152,7 +185,7 @@ class Main : App() {
         val root: BorderPane = FXMLLoader.load(javaClass.classLoader.getResource("main.fxml"))
         val menuBar: MenuBar = root.lookup("#menuBar") as MenuBar
 
-        initMenu(menuBar, stage)
+        menuController = MainMenuController(menuBar, menuCallback)
 
         setResizeListeners(root, menuBar)
 
@@ -193,58 +226,6 @@ class Main : App() {
                         editView.onResize()
                     }
                 })
-    }
-
-    private fun initMenu(menuBar: MenuBar, stage: Stage) {
-        // File
-        menuBar.menus[0].let {
-            // Open Directory
-            it.items[0].onAction = EventHandler<ActionEvent> {
-                val filePath = showFileChooser()
-                if (filePath != null) {
-                    initialize(filePath)
-                }
-            }
-
-            // Separator
-
-            // Quit
-            it.items[2].onAction = EventHandler<ActionEvent> {
-                stage.close()
-            }
-        }
-
-        // Crop
-        menuBar.menus[1].let {
-            // Crop Immediately
-            it.items[0].onAction = EventHandler<ActionEvent> {
-                cropTo(baseDir)
-            }
-
-            // Crop to
-            it.items[1].onAction = EventHandler<ActionEvent> {
-                val filePath = showFileChooser()
-                if (filePath != null) {
-                    cropTo(filePath)
-                }
-            }
-        }
-
-        // Help
-        menuBar.menus[2].let {
-
-            // Licenses
-            it.items[0].onAction = EventHandler<ActionEvent> {
-                showLicensesDialog()
-            }
-
-            // Separator
-
-            // About
-            it.items[2].onAction = EventHandler<ActionEvent> {
-                showAboutDialog()
-            }
-        }
     }
 
     private fun cropTo(path: File) {
