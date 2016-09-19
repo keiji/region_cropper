@@ -3,7 +3,6 @@ package io.keiji.region_cropper
 import io.keiji.region_cropper.entity.CandidateList
 import io.keiji.region_cropper.entity.Settings
 import io.keiji.region_cropper.view.EditView
-import io.keiji.region_cropper.MainMenuController
 import javafx.application.Application
 import javafx.beans.value.ObservableValue
 import javafx.embed.swing.SwingFXUtils
