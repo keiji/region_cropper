@@ -16,9 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-import io.keiji.region_cropper.entity.PositionComparator
-import io.keiji.region_cropper.entity.CandidateList
-import io.keiji.region_cropper.entity.Settings
+import io.keiji.region_cropper.entity.*
 import javafx.scene.canvas.Canvas
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
@@ -27,15 +25,13 @@ import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseButton
 import javafx.scene.input.MouseEvent
 import javafx.scene.paint.Color
-import java.io.File
 import java.util.*
 
 const val MIN_REGION_SIZE = 10.0f
 const val LIMIT_SAVE_STATE = 200
 
-private val NOT_SELECTED = CandidateList.Region(
-        -1.0, 0,
-        CandidateList.Region.Rect(0.0f, 0.0f, 0.0f, 0.0f))
+private val NOT_SELECTED = Region(-1.0, 0,
+        Region.Rect(0.0f, 0.0f, 0.0f, 0.0f))
 
 private data class Point(var x: Double, var y: Double) {
 }
@@ -48,7 +44,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
             var histories: Array<History.State> = Array(LIMIT_SAVE_STATE, { History.State(0) })) {
 
         data class State(var selectedRegionIndex: Int) {
-            lateinit var regionList: CandidateList
+            lateinit var regionList: RegionList
         }
 
         fun clear() {
@@ -56,7 +52,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
             index = 0
         }
 
-        fun push(selectedRegionIndex: Int, candidateList: CandidateList) {
+        fun push(selectedRegionIndex: Int, candidateList: RegionList) {
             val state = histories[index]
             state.selectedRegionIndex = selectedRegionIndex
             state.regionList = candidateList
@@ -103,14 +99,15 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
     private var isInvalidated: Boolean = true
 
     private val draggingStartPoint: Point = Point(0.0, 0.0)
-    private var draggingRect: CandidateList.Region.Rect? = null
+    private var draggingRect: Region.Rect? = null
 
     lateinit var imageData: Image
-    lateinit var candidateList: CandidateList
+    lateinit var regionList: RegionList
+    var candidateList: CandidateList? = null
 
     private val history: History = History()
 
-    var selectedCandidate: CandidateList.Region = NOT_SELECTED
+    var selectedCandidate: Region = NOT_SELECTED
     private var selectedIndex: Int = 0
 
     private var reticle: Point = Point(0.0, 0.0)
@@ -246,7 +243,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
                         if (draggingRect === null) {
                             draggingStartPoint.x = tempPoint.x
                             draggingStartPoint.y = tempPoint.y
-                            draggingRect = CandidateList.Region.Rect(0.0f, 0.0f, 0.0f, 0.0f)
+                            draggingRect = Region.Rect(0.0f, 0.0f, 0.0f, 0.0f)
                         }
                         draggingRect!!.left = Math.round(Math.min(draggingStartPoint.x, tempPoint.x)).toFloat()
                         draggingRect!!.right = Math.round(Math.max(draggingStartPoint.x, tempPoint.x)).toFloat()
@@ -272,7 +269,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
     }
 
     private fun saveState() {
-        history.push(selectedIndex, candidateList.deepCopy())
+        history.push(selectedIndex, regionList.deepCopy())
     }
 
     fun restoreState() {
@@ -282,16 +279,16 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
         }
 
         selectedIndex = state.selectedRegionIndex
-        candidateList = state.regionList
+        regionList = state.regionList
 
-        if (selectedIndex >= candidateList.regions!!.size
-                || (selectedIndex < 0 && candidateList.regions!!.size > 0)) {
-            selectedIndex = candidateList.regions!!.size - 1
+        if (selectedIndex >= regionList.regions!!.size
+                || (selectedIndex < 0 && regionList.regions!!.size > 0)) {
+            selectedIndex = regionList.regions!!.size - 1
         }
 
         println(selectedIndex)
 
-        selectedCandidate = if (selectedIndex < 0) NOT_SELECTED else candidateList.regions!![selectedIndex]
+        selectedCandidate = if (selectedIndex < 0) NOT_SELECTED else regionList.regions!![selectedIndex]
 
         isInvalidated = true
         draw()
@@ -323,30 +320,31 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
         point.y = yPos
     }
 
-    fun setData(image: Image, candidateList: CandidateList, reverse: Boolean) {
+    fun setData(image: Image, regionList: RegionList, candidateList: CandidateList?, reverse: Boolean) {
         history.clear()
 
         imageData = image
+        this.regionList = regionList
         this.candidateList = candidateList
 
-        if (candidateList.regions === null) {
-            candidateList.regions = ArrayList<CandidateList.Region>()
+        if (regionList.regions === null) {
+            regionList.regions = ArrayList<Region>()
 
-            if (candidateList.detectedFaces != null) {
-                for (c: CandidateList.Region in candidateList.detectedFaces.regions) {
-                    this.candidateList.regions!!.add(c.copy())
+            if (candidateList !== null && candidateList.detectedFaces !== null) {
+                for (r: Region in candidateList.detectedFaces.regions) {
+                    regionList.regions!!.add(r.deepCopy())
                 }
             }
         }
 
-        Collections.sort(candidateList.regions, PositionComparator())
+        Collections.sort(regionList.regions, PositionComparator())
 
-        if (candidateList.regions!!.size == 0) {
+        if (regionList.regions!!.size == 0) {
             selectedIndex = -1
             selectedCandidate = NOT_SELECTED
         } else {
-            selectedIndex = if (!reverse) 0 else (this.candidateList.regions!!.size - 1)
-            selectedCandidate = this.candidateList.regions!![selectedIndex]
+            selectedIndex = if (!reverse) 0 else (this.regionList.regions!!.size - 1)
+            selectedCandidate = this.regionList.regions!![selectedIndex]
         }
 
         onResize()
@@ -386,7 +384,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
 
         gc.lineWidth = 1.0
 
-        for (c: CandidateList.Region in candidateList.regions!!) {
+        for (c: Region in regionList.regions!!) {
             if (c === selectedCandidate) {
                 continue
             }
@@ -433,7 +431,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
         gc.restore()
     }
 
-    private fun drawDraggingRect(gc: GraphicsContext, draggingRect: CandidateList.Region.Rect?) {
+    private fun drawDraggingRect(gc: GraphicsContext, draggingRect: Region.Rect?) {
         if (draggingRect === null) {
             return
         }
@@ -447,12 +445,12 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
 
     private val margin: Double = 2.0
 
-    private fun drawRegion(c: CandidateList.Region, gc: GraphicsContext, isSelected: Boolean) {
+    private fun drawRegion(c: Region, gc: GraphicsContext, isSelected: Boolean) {
         if (c === NOT_SELECTED) {
             return
         }
 
-        val rect: CandidateList.Region.Rect = c.rect
+        val rect: Region.Rect = c.rect
         val color: Color = settings.labelSettings[c.label].webColor
 
         gc.stroke = color
@@ -506,14 +504,14 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
     }
 
     private fun selectNextRegion(): Boolean {
-        if (selectedIndex >= candidateList.regions!!.size - 1) {
+        if (selectedIndex >= regionList.regions!!.size - 1) {
             return false
         }
 
         saveState()
 
         selectedIndex++
-        selectedCandidate = candidateList.regions!![selectedIndex]
+        selectedCandidate = regionList.regions!![selectedIndex]
         return true
     }
 
@@ -526,11 +524,11 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
         saveState()
 
         selectedIndex--
-        selectedCandidate = candidateList.regions!![selectedIndex]
+        selectedCandidate = regionList.regions!![selectedIndex]
         return true
     }
 
-    private fun validateRect(rect: CandidateList.Region.Rect) {
+    private fun validateRect(rect: Region.Rect) {
         rect.left = Math.max(0.0f, rect.left)
         rect.top = Math.max(0.0f, rect.top)
         rect.right = Math.min(imageData.width.toFloat(), rect.right)
@@ -573,9 +571,9 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
     private fun deleteRegion() {
         saveState()
 
-        candidateList.regions!!.remove(selectedCandidate)
+        regionList.regions!!.remove(selectedCandidate)
 
-        if (selectedIndex > candidateList.regions!!.size - 1) {
+        if (selectedIndex > regionList.regions!!.size - 1) {
             selectedIndex -= 1
         }
 
@@ -584,46 +582,45 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
             return
         }
 
-        selectedCandidate = candidateList.regions!![selectedIndex]
+        selectedCandidate = regionList.regions!![selectedIndex]
     }
 
-    private fun addRect(rect: CandidateList.Region.Rect) {
+    private fun addRect(rect: Region.Rect) {
         saveState()
 
-        selectedCandidate = CandidateList.Region(1.0, settings.defaultLabelNumber, rect)
-        candidateList.regions!!.add(selectedCandidate)
+        selectedCandidate = Region(1.0, settings.defaultLabelNumber, rect)
+        regionList.regions!!.add(selectedCandidate)
 
-        Collections.sort(candidateList.regions!!, PositionComparator())
+        Collections.sort(regionList.regions!!, PositionComparator())
 
-        selectedIndex = candidateList.regions!!.indexOf(selectedCandidate)
+        selectedIndex = regionList.regions!!.indexOf(selectedCandidate)
         validateRect(selectedCandidate.rect)
     }
 
     fun reset(reverse: Boolean = false) {
         saveState()
 
-        if (candidateList.regions === null) {
-            candidateList.regions = ArrayList<CandidateList.Region>()
+        if (regionList.regions === null) {
+            regionList.regions = ArrayList<Region>()
         } else {
-            candidateList.regions!!.clear()
+            regionList.regions!!.clear()
         }
 
-        if (candidateList.detectedFaces != null) {
-            for (c: CandidateList.Region in candidateList.detectedFaces!!.regions) {
-                val candidate: CandidateList.Region = CandidateList.Region(0.0, c.label, c.rect.copy())
-                this.candidateList.regions!!.add(candidate)
+        if (candidateList !== null && candidateList!!.detectedFaces !== null) {
+            for (r: Region in candidateList!!.detectedFaces!!.regions) {
+                this.regionList.regions!!.add(r.deepCopy())
             }
         }
 
-        Collections.sort(candidateList.regions, PositionComparator())
+        Collections.sort(regionList.regions, PositionComparator())
 
-        if (candidateList.regions!!.size == 0) {
+        if (regionList.regions!!.size == 0) {
             selectedIndex = -1
             selectedCandidate = NOT_SELECTED
             return
         }
 
-        selectedIndex = if (!reverse) 0 else (this.candidateList.regions!!.size - 1)
-        selectedCandidate = this.candidateList.regions!![selectedIndex]
+        selectedIndex = if (!reverse) 0 else (this.regionList.regions!!.size - 1)
+        selectedCandidate = this.regionList.regions!![selectedIndex]
     }
 }

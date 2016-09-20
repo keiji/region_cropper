@@ -23,31 +23,6 @@ import java.io.File
 import java.nio.charset.Charset
 import java.util.*
 
-class PositionComparator : Comparator<CandidateList.Region> {
-    override fun compare(obj1: CandidateList.Region, obj2: CandidateList.Region): Int {
-        val distance1 = Math.sqrt(Math.pow(obj1.rect.centerX().toDouble(), 2.0)
-                + Math.pow(obj1.rect.centerY().toDouble(), 2.0))
-        val distance2 = Math.sqrt(Math.pow(obj2.rect.centerX().toDouble(), 2.0)
-                + Math.pow(obj2.rect.centerY().toDouble(), 2.0))
-
-        when {
-            distance1 > distance2 -> return 1
-            distance1 < distance2 -> return -1
-            else -> return 0
-        }
-    }
-}
-
-class LikelihoodComparator : Comparator<CandidateList.Region> {
-    override fun compare(obj1: CandidateList.Region, obj2: CandidateList.Region): Int {
-        when {
-            obj1.probability > obj2.probability -> return 1
-            obj1.probability < obj2.probability -> return -1
-            else -> return 0
-        }
-    }
-}
-
 data class CandidateList(
         @SerializedName("generator")
         val generator: String,
@@ -58,9 +33,6 @@ data class CandidateList(
         @SerializedName("detected_faces")
         val detectedFaces: DetectedFaces?,
 
-        @SerializedName("regions")
-        var regions: ArrayList<Region>?,
-
         @SerializedName("created_at")
         val createdAt: String
 ) {
@@ -69,23 +41,6 @@ data class CandidateList(
             val source = File(filePath).readText(Charset.forName("UTF-8"))
             return Gson().fromJson(source, CandidateList::class.java)!!
         }
-    }
-
-    fun save(file: File?) {
-        Collections.sort(regions, LikelihoodComparator())
-        val gson = GsonBuilder().setPrettyPrinting().create();
-        file!!.writeText(gson.toJson(this, CandidateList::class.java), Charset.forName("UTF-8"))
-
-        Collections.sort(regions, PositionComparator())
-    }
-
-    fun deepCopy(): CandidateList {
-        val copiedRegions = ArrayList<CandidateList.Region>()
-        for (region: CandidateList.Region in regions!!) {
-            val copiedRect = region.rect.copy()
-            copiedRegions.add(CandidateList.Region(region.probability, region.label, copiedRect))
-        }
-        return copy(regions = copiedRegions)
     }
 
     data class DetectedFaces(
@@ -101,52 +56,4 @@ data class CandidateList(
 
     }
 
-    data class Region(
-            @SerializedName("probability")
-            val probability: Double,
-
-            @SerializedName("label")
-            var label: Int,
-
-            @SerializedName("rect")
-            val rect: Rect
-    ) {
-        data class Rect(
-                @SerializedName("left")
-                var left: Float,
-
-                @SerializedName("top")
-                var top: Float,
-
-                @SerializedName("right")
-                var right: Float,
-
-                @SerializedName("bottom")
-                var bottom: Float
-        ) {
-
-            fun width(): Float {
-                return right - left
-            }
-
-            fun height(): Float {
-                return bottom - top
-            }
-
-            fun centerX(): Float {
-                return left + width() / 2
-            }
-
-            fun centerY(): Float {
-                return top + height() / 2
-            }
-
-            fun offset(x: Float, y: Float) {
-                left += x
-                right += x
-                top += y
-                bottom += y
-            }
-        }
-    }
 }
