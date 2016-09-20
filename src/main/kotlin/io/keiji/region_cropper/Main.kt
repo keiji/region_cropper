@@ -144,7 +144,7 @@ class Main : App() {
     private lateinit var dropImage: Image
 
     override fun init() {
-        dropImage = Image(javaClass.classLoader.getResourceAsStream("ic_image_black_48dp.png"))
+        dropImage = Image(javaClass.classLoader.getResourceAsStream("drop_image_here.png"))
 
         val settingPath: File = File(SETTING_FILE_PATH)
         if (!settingPath.exists()) {
