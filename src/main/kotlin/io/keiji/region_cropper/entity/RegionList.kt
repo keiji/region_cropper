@@ -25,10 +25,10 @@ import java.util.*
 
 class PositionComparator : Comparator<Region> {
     override fun compare(obj1: Region, obj2: Region): Int {
-        val distance1 = Math.sqrt(Math.pow(obj1.rect.centerX().toDouble(), 2.0)
-                + Math.pow(obj1.rect.centerY().toDouble(), 2.0))
-        val distance2 = Math.sqrt(Math.pow(obj2.rect.centerX().toDouble(), 2.0)
-                + Math.pow(obj2.rect.centerY().toDouble(), 2.0))
+        val distance1 = Math.sqrt(Math.pow(obj1.rect.left.toDouble(), 2.0)
+                + Math.pow(obj1.rect.top.toDouble(), 2.0))
+        val distance2 = Math.sqrt(Math.pow(obj2.rect.left.toDouble(), 2.0)
+                + Math.pow(obj2.rect.top.toDouble(), 2.0))
 
         when {
             distance1 > distance2 -> return 1
