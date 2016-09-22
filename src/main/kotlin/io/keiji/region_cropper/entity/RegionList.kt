@@ -38,16 +38,6 @@ class PositionComparator : Comparator<Region> {
     }
 }
 
-class ProbabilityComparator : Comparator<Region> {
-    override fun compare(obj1: Region, obj2: Region): Int {
-        when {
-            obj1.probability > obj2.probability -> return 1
-            obj1.probability < obj2.probability -> return -1
-            else -> return 0
-        }
-    }
-}
-
 data class RegionList(
         @SerializedName("generator")
         val generator: String,
@@ -69,12 +59,8 @@ data class RegionList(
     }
 
     fun save(file: File?) {
-        Collections.sort(regions, ProbabilityComparator())
-
         val gson = GsonBuilder().setPrettyPrinting().create();
         file!!.writeText(gson.toJson(this, RegionList::class.java), Charset.forName("UTF-8"))
-
-        Collections.sort(regions, PositionComparator())
     }
 
     fun deepCopy(): RegionList {
