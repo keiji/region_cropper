@@ -17,6 +17,7 @@ limitations under the License.
  */
 
 import io.keiji.region_cropper.entity.*
+import javafx.scene.Cursor
 import javafx.scene.canvas.Canvas
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
@@ -238,6 +239,12 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
         addEventFilter(MouseEvent.ANY, { event ->
             run {
                 convertLogicalPoint(event.x, event.y, tempPoint)
+
+                when (event.eventType) {
+                    MouseEvent.MOUSE_ENTERED -> cursor = Cursor.CROSSHAIR
+                    MouseEvent.MOUSE_EXITED -> cursor = Cursor.DEFAULT
+                }
+
                 when {
                     event.button == MouseButton.PRIMARY && event.eventType == MouseEvent.MOUSE_DRAGGED -> {
                         if (draggingRect === null) {
