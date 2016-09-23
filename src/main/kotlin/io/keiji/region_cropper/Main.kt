@@ -117,11 +117,11 @@ class Main : App() {
 
     private val editViewCallback = object : EditView.Callback {
         override fun onNextFile(reverse: Boolean) {
-            nextPicture(reverse)
+            nextPicture(reverse = reverse)
         }
 
         override fun onPreviousFile(reverse: Boolean) {
-            prevPicture(reverse)
+            prevPicture(reverse = reverse)
         }
     }
 
@@ -217,6 +217,8 @@ class Main : App() {
                     event.code == KeyCode.ESCAPE -> onReset(event.isControlDown)
                     event.isShortcutDown && event.code == KeyCode.S -> regionList.save(resultJsonFile)
                     event.isShortcutDown && event.code == KeyCode.W -> stage.close()
+                    event.isShiftDown && event.code == KeyCode.HOME -> prevPicture(index = 10)
+                    event.isShiftDown && event.code == KeyCode.END -> nextPicture(index = 10)
                 }
             }
         })
@@ -465,25 +467,23 @@ class Main : App() {
         }
     }
 
-    private fun prevPicture(reverse: Boolean = false) {
+    private fun prevPicture(index: Int = 1, reverse: Boolean = false) {
         regionList.save(resultJsonFile)
 
-        if (fileIndex == 0) {
-            return
-        }
+        fileIndex -= index
+        fileIndex = if (fileIndex < 0) 0 else fileIndex
 
-        fileIndex--
         loadFile(fileList[fileIndex], reverse)
     }
 
-    private fun nextPicture(reverse: Boolean = false) {
+    private fun nextPicture(index: Int = 1, reverse: Boolean = false) {
         regionList.save(resultJsonFile)
 
-        if (fileIndex == fileList.size - 1) {
-            return
-        }
+        fileIndex += index
 
-        fileIndex++
+        val limit = fileList.size - 1
+        fileIndex = if (fileIndex > limit) limit else fileIndex
+
         loadFile(fileList[fileIndex], reverse)
     }
 
