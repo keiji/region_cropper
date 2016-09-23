@@ -342,10 +342,10 @@ class Main : App() {
         }
 
         if (isControlDown) {
-            editView.reset()
-            return
+            showMergeDialog()
+        } else {
+            showResetDialog()
         }
-        showResetDialog()
     }
 
     private fun cropTo(path: File) {
@@ -448,9 +448,32 @@ class Main : App() {
         return chooser.showDialog(stage)
     }
 
+    private fun showMergeDialog() {
+        if (candidateList === null) {
+            return
+
+        }
+        Alert(Alert.AlertType.CONFIRMATION).let {
+            val message: String = "Merge latest candidates?"
+
+            it.setContentText(message)
+            it.setHeaderText(null)
+
+            val okButton: Button = it.dialogPane.lookupButton(ButtonType.OK) as Button
+            okButton.isDefaultButton = false
+
+            val cancelButton: Button = it.dialogPane.lookupButton(ButtonType.CANCEL) as Button
+            cancelButton.isDefaultButton = true
+
+            if (it.showAndWait().get() === ButtonType.OK) {
+                editView.merge()
+            }
+        }
+    }
+
     private fun showResetDialog() {
         Alert(Alert.AlertType.CONFIRMATION).let {
-            val message: String = if (candidateList !== null) "Clear regions?" else "Discard changes?"
+            val message: String = if (candidateList === null) "Clear regions?" else "Discard changes?"
 
             it.setContentText(message)
             it.setHeaderText(null)

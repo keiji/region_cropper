@@ -623,4 +623,39 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
         selectedIndex = if (!reverse) 0 else (this.regionList.regions!!.size - 1)
         selectedCandidate = this.regionList.regions!![selectedIndex]
     }
+
+    fun merge() {
+        saveState()
+
+        if (regionList.regions === null) {
+            regionList.regions = ArrayList<Region>()
+        }
+
+        if (candidateList !== null && candidateList!!.detectedFaces !== null) {
+            for (r: Region in candidateList!!.detectedFaces!!.regions) {
+                var existFlag: Boolean = false
+                for (er: Region in regionList.regions!!) {
+                    if (er.rect == r.rect) {
+                        existFlag = true
+                        break
+                    }
+                }
+
+                if (!existFlag) {
+                    this.regionList.regions!!.add(r.deepCopy())
+                }
+            }
+        }
+
+        Collections.sort(regionList.regions, PositionComparator())
+
+        if (regionList.regions!!.size == 0) {
+            selectedIndex = -1
+            selectedCandidate = NOT_SELECTED
+            return
+        }
+
+        selectedIndex = 0
+        selectedCandidate = this.regionList.regions!![selectedIndex]
+    }
 }
