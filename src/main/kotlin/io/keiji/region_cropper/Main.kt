@@ -493,6 +493,10 @@ class Main : App() {
     private fun prevPicture(index: Int = 1, reverse: Boolean = false) {
         regionList.save(resultJsonFile)
 
+        if (fileIndex == 0) {
+            return
+        }
+
         fileIndex -= index
         fileIndex = if (fileIndex < 0) 0 else fileIndex
 
@@ -502,9 +506,12 @@ class Main : App() {
     private fun nextPicture(index: Int = 1, reverse: Boolean = false) {
         regionList.save(resultJsonFile)
 
-        fileIndex += index
-
         val limit = fileList.size - 1
+        if (fileIndex == limit) {
+            return
+        }
+
+        fileIndex += index
         fileIndex = if (fileIndex > limit) limit else fileIndex
 
         loadFile(fileList[fileIndex], reverse)
