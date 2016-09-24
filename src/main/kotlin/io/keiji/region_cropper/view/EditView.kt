@@ -389,7 +389,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
                 imageData.width * scale,
                 imageData.height * scale)
 
-        gc.lineWidth = 1.0
+        gc.lineWidth = 2.0
 
         for (c: Region in regionList.regions!!) {
             if (c === selectedCandidate) {
