@@ -132,8 +132,8 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
                 val shiftValue = if (event.isShiftDown) 1.0f else 5.0f
 
                 val labelSetting: Settings.Label = settings.labelSettings[selectedCandidate.label]
-                val editable: Boolean = labelSetting.editable
-                val deletable: Boolean = labelSetting.deletable
+                val editable: Boolean = labelSetting.editable && !settings.viewOnly
+                val deletable: Boolean = labelSetting.deletable && !settings.viewOnly
 
                 when {
                     event.isShiftDown && event.code == KeyCode.SPACE -> isFocus = Focus.Locked
@@ -169,8 +169,6 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
                     event.isShortcutDown && event.code == KeyCode.Z -> restoreState()
                     event.isControlDown && event.code == KeyCode.Z -> restoreState()
 
-                    event.code == KeyCode.END -> callback.onNextFile()
-                    event.code == KeyCode.HOME -> callback.onPreviousFile()
                     deletable && event.code == KeyCode.BACK_SPACE -> deleteRegion()
                     event.code == KeyCode.DIGIT0 -> setLabel(0)
                     event.code == KeyCode.DIGIT1 -> setLabel(1)
@@ -217,9 +215,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
                     event.code == KeyCode.RIGHT -> move(shiftValue, 0.0f)
                     event.code == KeyCode.DOWN -> move(0.0f, shiftValue)
                 }
-
-                isInvalidated = true
-                draw()
+                redraw()
             }
         })
 
@@ -231,8 +227,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
                     event.isAltDown -> mode = Mode.Expand
                     else -> mode = Mode.Normal
                 }
-                isInvalidated = true
-                draw()
+                redraw()
             }
         })
 
@@ -246,6 +241,9 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
                 }
 
                 when {
+                    settings.viewOnly -> {
+                        /* do nothing */
+                    }
                     event.button == MouseButton.PRIMARY && event.eventType == MouseEvent.MOUSE_DRAGGED -> {
                         if (draggingRect === null) {
                             draggingStartPoint.x = tempPoint.x
@@ -293,12 +291,9 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
             selectedIndex = regionList.regions!!.size - 1
         }
 
-        println(selectedIndex)
-
         selectedCandidate = if (selectedIndex < 0) NOT_SELECTED else regionList.regions!![selectedIndex]
 
-        isInvalidated = true
-        draw()
+        redraw()
     }
 
     private fun setLabel(label: Int, moveNext: Boolean = false) {
@@ -337,7 +332,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
         if (regionList.regions === null) {
             regionList.regions = ArrayList<Region>()
 
-            if (candidateList !== null && candidateList.detectedFaces !== null) {
+            if (candidateList !== null) {
                 for (r: Region in candidateList.detectedFaces.regions) {
                     regionList.regions!!.add(r.deepCopy())
                 }
@@ -346,7 +341,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
 
         Collections.sort(regionList.regions, PositionComparator())
 
-        if (regionList.regions!!.size == 0) {
+        if (regionList.regions!!.size == 0 || settings.viewOnly) {
             selectedIndex = -1
             selectedCandidate = NOT_SELECTED
         } else {
@@ -366,11 +361,15 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
         paddingHorizontal = (width - (imageData.width * scale)) / 2
         paddingVertical = (height - (imageData.height * scale)) / 2
 
+        redraw()
+    }
+
+    fun redraw() {
         isInvalidated = true
         draw()
     }
 
-    fun draw() {
+    private fun draw() {
         if (!isInvalidated) {
             return
         }
@@ -391,22 +390,28 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
 
         gc.lineWidth = 2.0
 
+        if (candidateList != null && settings.viewOnly) {
+            for (c: Region in candidateList!!.detectedFaces.regions) {
+                drawRegion(c, gc)
+            }
+            gc.restore()
+            return
+        }
+
         for (c: Region in regionList.regions!!) {
             if (c === selectedCandidate) {
                 continue
             }
-            drawRegion(c, gc, false)
+            drawRegion(c, gc)
         }
 
         if (isFocus.isEnabled) {
             grayOut(gc)
         }
 
-        drawRegion(selectedCandidate, gc, true)
+        drawRegion(selectedCandidate, gc, isSelected = true)
 
         drawDraggingRect(gc, draggingRect)
-
-//        gc.fillOval(tempPoint.x * scale, tempPoint.y * scale, 5.0, 5.0)
 
         gc.restore()
     }
@@ -452,12 +457,13 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
 
     private val margin: Double = 2.0
 
-    private fun drawRegion(c: Region, gc: GraphicsContext, isSelected: Boolean) {
+    private fun drawRegion(c: Region, gc: GraphicsContext, isSelected: Boolean = false) {
         if (c === NOT_SELECTED) {
             return
         }
 
         val rect: Region.Rect = c.rect
+
         val color: Color = settings.labelSettings[c.label].webColor
 
         gc.stroke = color
@@ -511,6 +517,10 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
     }
 
     private fun selectNextRegion(): Boolean {
+        if (settings.viewOnly) {
+            return false
+        }
+
         if (selectedIndex >= regionList.regions!!.size - 1) {
             return false
         }
@@ -523,6 +533,10 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
     }
 
     private fun selectPrevRegion(): Boolean {
+        if (settings.viewOnly) {
+            return false
+        }
+
         if (selectedIndex <= 0) {
             selectedIndex = 0
             return false
@@ -613,8 +627,8 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
             regionList.regions!!.clear()
         }
 
-        if (candidateList !== null && candidateList!!.detectedFaces !== null) {
-            for (r: Region in candidateList!!.detectedFaces!!.regions) {
+        if (candidateList !== null) {
+            for (r: Region in candidateList!!.detectedFaces.regions) {
                 this.regionList.regions!!.add(r.deepCopy())
             }
         }
@@ -638,8 +652,8 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
             regionList.regions = ArrayList<Region>()
         }
 
-        if (candidateList !== null && candidateList!!.detectedFaces !== null) {
-            for (r: Region in candidateList!!.detectedFaces!!.regions) {
+        if (candidateList !== null) {
+            for (r: Region in candidateList!!.detectedFaces.regions) {
                 var existFlag: Boolean = false
                 for (er: Region in regionList.regions!!) {
                     if (er.rect == r.rect) {

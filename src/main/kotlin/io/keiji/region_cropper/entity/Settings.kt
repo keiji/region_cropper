@@ -36,6 +36,18 @@ class LabelComparator : Comparator<Settings.Label> {
     }
 }
 
+private val colorCache: HashMap<String, Color> = HashMap()
+
+fun color(colorString: String): Color {
+    if (colorCache.containsKey(colorString)) {
+        return colorCache[colorString]!!
+    }
+
+    val color = Color.web(colorString)
+    colorCache[colorString] = color
+    return color
+}
+
 data class Settings(
         @Expose
         @SerializedName("default_label_number")
@@ -53,6 +65,10 @@ data class Settings(
         @SerializedName("label_settings")
         val labelSettings: ArrayList<Label>
 ) {
+    @Expose
+    @SerializedName("view_only")
+    var viewOnly: Boolean = false
+
     companion object {
         fun getInstance(filePath: String): Settings {
             val source = File(filePath).readText(Charset.forName("UTF-8"))
@@ -64,12 +80,12 @@ data class Settings(
 
     val selectedRegionStrokeWebColor: Color
         get() {
-            return Color.web(selectedRegionStrokeColor)
+            return color(selectedRegionStrokeColor)
         }
 
     val draggingRegionStrokeWebColor: Color
         get() {
-            return Color.web(draggingRegionStrokeColor)
+            return color(draggingRegionStrokeColor)
         }
 
     fun save(file: File) {
@@ -100,10 +116,11 @@ data class Settings(
             @Expose
             @SerializedName("color")
             val color: String
+
     ) {
         val webColor: Color
             get() {
-                return Color.web(color)
+                return color(color)
             }
     }
 

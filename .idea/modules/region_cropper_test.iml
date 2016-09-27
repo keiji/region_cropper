@@ -15,6 +15,7 @@
     <orderEntry type="library" name="Gradle: no.tornado:tornadofx:1.5.5" level="project" />
     <orderEntry type="library" name="Gradle: junit:junit:4.4" level="project" />
     <orderEntry type="library" name="Gradle: com.google.code.gson:gson:2.3.1" level="project" />
+    <orderEntry type="library" name="Gradle: org.controlsfx:controlsfx:8.40.12" level="project" />
     <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-runtime:1.0.3" level="project" />
     <orderEntry type="library" name="Gradle: org.glassfish:javax.json:1.0.4" level="project" />
     <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-reflect:1.0.3" level="project" />

@@ -7,6 +7,7 @@
 <?import javafx.scene.layout.BorderPane?>
 
 <?import javafx.scene.image.ImageView?>
+<?import org.controlsfx.control.StatusBar?>
 <BorderPane id="vbox" xmlns="http://javafx.com/javafx/8.0.76-ea"
             xmlns:fx="http://javafx.com/fxml/1">
     <center>
@@ -35,4 +36,7 @@
             </Menu>
         </MenuBar>
     </top>
+    <bottom>
+        <StatusBar fx:id="statusBar" />
+    </bottom>
 </BorderPane>

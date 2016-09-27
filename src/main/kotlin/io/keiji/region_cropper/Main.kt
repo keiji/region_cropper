@@ -24,6 +24,7 @@ import javafx.scene.layout.Priority
 import javafx.stage.DirectoryChooser
 import javafx.stage.FileChooser
 import javafx.stage.Stage
+import org.controlsfx.control.StatusBar
 import tornadofx.App
 import java.io.File
 import java.nio.charset.Charset
@@ -57,14 +58,21 @@ class Main : App() {
 
     private lateinit var stage: Stage
 
-    private lateinit var fileList: List<File>
-    private var fileIndex: Int = 0
+    private lateinit var imageFileList: List<File>
+    private var imageFileIndex: Int = 0
 
-    private val file: File
+    private val imageFile: File
         get() {
-            return fileList[fileIndex]
+            return imageFileList[imageFileIndex]
         }
 
+    private lateinit var candidateFileList: List<File>
+    private var candidateFileIndex: Int = 0
+
+    private val candidateFile: File
+        get() {
+            return candidateFileList[candidateFileIndex]
+        }
 
     private lateinit var resultJsonFile: File
 
@@ -96,7 +104,7 @@ class Main : App() {
         }
 
         override fun quickCrop() {
-            cropTo(file.parentFile)
+            cropTo(imageFile.parentFile)
         }
 
         override fun cropTo() {
@@ -159,34 +167,34 @@ class Main : App() {
     }
 
     fun initialize(file: File) {
-        fileList = file.parentFile.listFiles().filter {
+        imageFileList = file.parentFile.listFiles().filter {
             it.name.toLowerCase().endsWith(".png")
                     || it.name.toLowerCase().endsWith(".jpg")
                     || it.name.toLowerCase().endsWith(".jpeg")
         }
 
-        Collections.sort(fileList, { a, b ->
+        Collections.sort(imageFileList, { a, b ->
             a.absolutePath.toLowerCase().compareTo(b.absolutePath.toLowerCase())
         })
 
-        fileIndex = if (file.isDirectory) 0 else fileList.indexOf(file)
+        imageFileIndex = if (file.isDirectory) 0 else imageFileList.indexOf(file)
 
-        loadFile(fileList[fileIndex])
+        loadFile(imageFileList[imageFileIndex])
     }
 
     fun initialize(files: List<File>) {
-        fileList = files.filter {
+        imageFileList = files.filter {
             it.name.toLowerCase().endsWith(".png")
                     || it.name.toLowerCase().endsWith(".jpg")
                     || it.name.toLowerCase().endsWith(".jpeg")
         }
 
-        Collections.sort(fileList, { a, b ->
+        Collections.sort(imageFileList, { a, b ->
             a.absolutePath.toLowerCase().compareTo(b.absolutePath.toLowerCase())
         })
 
-        fileIndex = 0
-        loadFile(fileList[fileIndex])
+        imageFileIndex = 0
+        loadFile(imageFileList[imageFileIndex])
     }
 
     private lateinit var menuController: MainMenuController
@@ -207,6 +215,7 @@ class Main : App() {
 
     private lateinit var borderPane: BorderPane
     private lateinit var menuBar: MenuBar
+    private lateinit var statusBar: StatusBar
 
     override fun start(stage: Stage) {
         this.stage = stage
@@ -219,6 +228,12 @@ class Main : App() {
                     event.isShortcutDown && event.code == KeyCode.W -> stage.close()
                     event.isShiftDown && event.code == KeyCode.HOME -> prevPicture(index = 10)
                     event.isShiftDown && event.code == KeyCode.END -> nextPicture(index = 10)
+                    event.code == KeyCode.HOME -> prevPicture()
+                    event.code == KeyCode.END -> nextPicture()
+                    event.isShiftDown && event.code == KeyCode.PAGE_UP -> prevCandidate(index = 10)
+                    event.isShiftDown && event.code == KeyCode.PAGE_DOWN -> nextCandidate(index = 10)
+                    event.code == KeyCode.PAGE_UP -> prevCandidate()
+                    event.code == KeyCode.PAGE_DOWN -> nextCandidate()
                 }
             }
         })
@@ -229,6 +244,7 @@ class Main : App() {
         dropView.image = dropImage
 
         menuBar = borderPane.lookup("#menuBar") as MenuBar
+        statusBar = borderPane.lookup("#statusBar") as StatusBar
 
         menuController = MainMenuController(menuBar, menuCallback)
 
@@ -238,9 +254,48 @@ class Main : App() {
 
         initDragAndDrop(scene)
 
+        statusBar.text = ""
         stage.title = "Region Cropper"
         stage.setScene(scene)
         stage.show()
+    }
+
+    private fun nextCandidate(index: Int = 1) {
+        if (candidateList === null) {
+            return
+        }
+
+        candidateFileIndex += index
+
+        if (candidateFileIndex > candidateFileList.size - 1) {
+            candidateFileIndex = candidateFileList.size - 1
+        }
+
+        candidateList = CandidateList.getInstance(candidateFile.absolutePath)
+        editView.candidateList = candidateList
+
+        editView.redraw()
+
+        updateStateusBarText()
+    }
+
+    private fun prevCandidate(index: Int = 1) {
+        if (candidateList === null) {
+            return
+        }
+
+        candidateFileIndex -= index
+
+        if (candidateFileIndex < 0) {
+            candidateFileIndex = 0
+        }
+
+        candidateList = CandidateList.getInstance(candidateFile.absolutePath)
+        editView.candidateList = candidateList
+
+        editView.redraw()
+
+        updateStateusBarText()
     }
 
     private fun showEditView() {
@@ -253,7 +308,7 @@ class Main : App() {
         borderPane.center = editView
         editView.let {
             it.settings = settings
-            it.height = borderPane.height - menuBar.height
+            it.height = getEditViewHeight()
             it.width = borderPane.width
             it.setFocusTraversable(true)
             it.requestFocus()
@@ -261,6 +316,8 @@ class Main : App() {
 
         editViewInitialized = true
     }
+
+    private fun getEditViewHeight() = borderPane.height - menuBar.height - statusBar.height
 
     private fun initDragAndDrop(scene: Scene) {
         scene.onDragOver = object : EventHandler<DragEvent> {
@@ -329,7 +386,7 @@ class Main : App() {
                     observableValue: ObservableValue<out Number>, oldValue: Number, newValue: Number ->
                     run {
                         if (editViewInitialized) {
-                            editView.height = root.height - menuBar.height
+                            editView.height = getEditViewHeight()
                             editView.onResize()
                         }
                     }
@@ -374,7 +431,7 @@ class Main : App() {
             val writableImage = WritableImage(imageData.pixelReader,
                     rect.left.toInt(), rect.top.toInt(),
                     rect.width().toInt(), rect.height().toInt())
-            val file = File(filePathWithLabel, String.format("%s-%d.png", file, index))
+            val file = File(filePathWithLabel, String.format("%s-%d.png", imageFile, index))
             ImageIO.write(SwingFXUtils.fromFXImage(writableImage, null), "png", file);
             index++
         }
@@ -493,44 +550,48 @@ class Main : App() {
     private fun prevPicture(index: Int = 1, reverse: Boolean = false) {
         regionList.save(resultJsonFile)
 
-        if (fileIndex == 0) {
+        if (imageFileIndex == 0) {
             return
         }
 
-        fileIndex -= index
-        fileIndex = if (fileIndex < 0) 0 else fileIndex
+        imageFileIndex -= index
+        imageFileIndex = if (imageFileIndex < 0) 0 else imageFileIndex
 
-        loadFile(fileList[fileIndex], reverse)
+        loadFile(imageFileList[imageFileIndex], reverse)
     }
 
     private fun nextPicture(index: Int = 1, reverse: Boolean = false) {
         regionList.save(resultJsonFile)
 
-        val limit = fileList.size - 1
-        if (fileIndex == limit) {
+        val limit = imageFileList.size - 1
+        if (imageFileIndex == limit) {
             return
         }
 
-        fileIndex += index
-        fileIndex = if (fileIndex > limit) limit else fileIndex
+        imageFileIndex += index
+        imageFileIndex = if (imageFileIndex > limit) limit else imageFileIndex
 
-        loadFile(fileList[fileIndex], reverse)
+        loadFile(imageFileList[imageFileIndex], reverse)
     }
 
     private fun loadFile(imageFile: File, reverse: Boolean = false) {
         val nameAndExtension: List<String> = imageFile.name.split(".")
         val fileName = nameAndExtension[0]
+        val dir = imageFile.parentFile
 
-        resultJsonFile = File(file.parentFile, String.format("%s.json", fileName))
+        resultJsonFile = File(dir, String.format("%s.json", fileName))
         if (resultJsonFile.exists()) {
             regionList = RegionList.getInstance(resultJsonFile.absolutePath)
         } else {
             regionList = RegionList("Region Cropper", imageFile.name, null, createdAt())
         }
 
-        val candidateJsonFile = File(file.parentFile, String.format("%s-candidates.json", fileName))
-        if (candidateJsonFile.exists()) {
-            candidateList = CandidateList.getInstance(candidateJsonFile.absolutePath)
+        candidateFileList = dir.listFiles().toList().filter { f -> f.name.startsWith(String.format("%s-candidate", fileName)) && f.name.endsWith(".json") }
+        Collections.sort(candidateFileList, Collections.reverseOrder())
+        candidateFileIndex = 0
+
+        if (candidateFileList.size > 0) {
+            candidateList = CandidateList.getInstance(candidateFile.absolutePath)
         } else {
             candidateList = null
         }
@@ -541,7 +602,19 @@ class Main : App() {
 
         editView.setData(imageData, regionList, candidateList, reverse)
 
-        stage.title = String.format("%s - %,3d / %,3d", imageFile.name, (fileIndex + 1), fileList.size)
+        updateStateusBarText()
+    }
+
+    private fun updateStateusBarText() {
+        stage.title = String.format("%s (%,3d/%,3d)",
+                imageFile.name, (imageFileIndex + 1), imageFileList.size)
+
+        if (candidateList !== null) {
+            statusBar.text = String.format("Candidates: %s (%,3d/%,3d)",
+                    candidateFile.name, (candidateFileIndex + 1), candidateFileList.size)
+        } else {
+
+        }
     }
 
     private fun createdAt(): String {

@@ -31,7 +31,7 @@ data class CandidateList(
         val fileName: String,
 
         @SerializedName("detected_faces")
-        val detectedFaces: DetectedFaces?,
+        val detectedFaces: DetectedFaces,
 
         @SerializedName("created_at")
         val createdAt: String
@@ -46,9 +46,6 @@ data class CandidateList(
     data class DetectedFaces(
             @SerializedName("model_version")
             val modelVersion: String,
-
-            @SerializedName("engine_version")
-            val engineVersion: String,
 
             @SerializedName("regions")
             val regions: ArrayList<Region>
