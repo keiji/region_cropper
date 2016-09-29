@@ -390,10 +390,19 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
 
         gc.lineWidth = 2.0
 
-        if (candidateList != null && settings.viewOnly) {
+        if (candidateList != null) {
+            gc.save()
+
+            gc.lineWidth = 1.0
+            gc.setLineDashes(5.0, 2.0)
+
             for (c: Region in candidateList!!.detectedFaces.regions) {
                 drawRegion(c, gc)
             }
+            gc.restore()
+        }
+
+        if (settings.viewOnly) {
             gc.restore()
             return
         }

@@ -77,7 +77,6 @@ class Main : App() {
     private lateinit var resultJsonFile: File
 
     private lateinit var imageData: Image
-    private lateinit var regionList: RegionList
     private var candidateList: CandidateList? = null
 
     private val menuCallback = object : MainMenuController.Callback {
@@ -222,9 +221,10 @@ class Main : App() {
 
         stage.addEventFilter(KeyEvent.KEY_PRESSED, { event ->
             run {
+
                 when {
                     event.code == KeyCode.ESCAPE -> onReset(event.isControlDown)
-                    event.isShortcutDown && event.code == KeyCode.S -> regionList.save(resultJsonFile)
+                    event.isShortcutDown && event.code == KeyCode.S -> save()
                     event.isShortcutDown && event.code == KeyCode.W -> stage.close()
                     event.isShiftDown && event.code == KeyCode.HOME -> prevPicture(index = 10)
                     event.isShiftDown && event.code == KeyCode.END -> nextPicture(index = 10)
@@ -258,6 +258,10 @@ class Main : App() {
         stage.title = "Region Cropper"
         stage.setScene(scene)
         stage.show()
+    }
+
+    private fun save() {
+        editView.regionList.save(resultJsonFile)
     }
 
     private fun nextCandidate(index: Int = 1) {
@@ -406,11 +410,11 @@ class Main : App() {
     }
 
     private fun cropTo(path: File) {
-        if (regionList.regions == null) {
+        if (editView.regionList.regions == null) {
             return
         }
 
-        regionList.save(resultJsonFile)
+        save()
 
         val filePath: File
         if (path.isDirectory) {
@@ -420,7 +424,7 @@ class Main : App() {
         }
 
         var index: Int = 0
-        for (region: Region in regionList.regions!!) {
+        for (region: Region in editView.regionList.regions!!) {
             val labelSetting: Settings.Label = settings.labelSettings[region.label]
 
             val labelName: String = labelSetting.name ?: String.format("label_%d", labelSetting.number)
@@ -548,7 +552,7 @@ class Main : App() {
     }
 
     private fun prevPicture(index: Int = 1, reverse: Boolean = false) {
-        regionList.save(resultJsonFile)
+        save()
 
         if (imageFileIndex == 0) {
             return
@@ -561,7 +565,7 @@ class Main : App() {
     }
 
     private fun nextPicture(index: Int = 1, reverse: Boolean = false) {
-        regionList.save(resultJsonFile)
+        save()
 
         val limit = imageFileList.size - 1
         if (imageFileIndex == limit) {
@@ -579,6 +583,7 @@ class Main : App() {
         val fileName = nameAndExtension[0]
         val dir = imageFile.parentFile
 
+        val regionList: RegionList
         resultJsonFile = File(dir, String.format("%s.json", fileName))
         if (resultJsonFile.exists()) {
             regionList = RegionList.getInstance(resultJsonFile.absolutePath)
@@ -613,7 +618,7 @@ class Main : App() {
             statusBar.text = String.format("Candidates: %s (%,3d/%,3d)",
                     candidateFile.name, (candidateFileIndex + 1), candidateFileList.size)
         } else {
-
+            statusBar.text = ""
         }
     }
 
