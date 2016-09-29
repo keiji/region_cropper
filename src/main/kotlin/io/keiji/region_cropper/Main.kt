@@ -314,8 +314,16 @@ class Main : App() {
             it.settings = settings
             it.height = getEditViewHeight()
             it.width = borderPane.width
-            it.setFocusTraversable(true)
             it.requestFocus()
+
+            // 方向キーでフォーカスが外れてしまう不具合のワークアラウンド
+            it.focusedProperty().addListener { observableValue, oldProperty, newProperty ->
+                run {
+                    if (!newProperty) {
+                        it.requestFocus()
+                    }
+                }
+            }
         }
 
         editViewInitialized = true
