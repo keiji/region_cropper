@@ -261,6 +261,9 @@ class Main : App() {
     }
 
     private fun save() {
+        if (!editView.isUpdated) {
+            return
+        }
         editView.regionList.save(resultJsonFile)
     }
 

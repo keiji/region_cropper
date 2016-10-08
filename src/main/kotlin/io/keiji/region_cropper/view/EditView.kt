@@ -45,6 +45,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
             var histories: Array<History.State> = Array(LIMIT_SAVE_STATE, { History.State(0) })) {
 
         data class State(var selectedRegionIndex: Int) {
+            var isUpdated: Boolean = false
             lateinit var regionList: RegionList
         }
 
@@ -53,8 +54,9 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
             index = 0
         }
 
-        fun push(selectedRegionIndex: Int, candidateList: RegionList) {
+        fun push(isUpdated: Boolean, selectedRegionIndex: Int, candidateList: RegionList) {
             val state = histories[index]
+            state.isUpdated = isUpdated
             state.selectedRegionIndex = selectedRegionIndex
             state.regionList = candidateList
 
@@ -107,6 +109,11 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
     var candidateList: CandidateList? = null
 
     private val history: History = History()
+
+    var isUpdated: Boolean = false
+        private set(value) {
+            field = value
+        }
 
     var selectedCandidate: Region = NOT_SELECTED
     private var selectedIndex: Int = 0
@@ -273,8 +280,9 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
         })
     }
 
-    private fun saveState() {
-        history.push(selectedIndex, regionList.deepCopy())
+    private fun onUpdate() {
+        isUpdated = true
+        history.push(isUpdated, selectedIndex, regionList.deepCopy())
     }
 
     fun restoreState() {
@@ -283,6 +291,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
             return
         }
 
+        isUpdated = state.isUpdated
         selectedIndex = state.selectedRegionIndex
         regionList = state.regionList
 
@@ -301,7 +310,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
             return
         }
 
-        saveState()
+        onUpdate()
 
         selectedCandidate.label = label
 
@@ -534,8 +543,6 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
             return false
         }
 
-        saveState()
-
         selectedIndex++
         selectedCandidate = regionList.regions!![selectedIndex]
         return true
@@ -550,8 +557,6 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
             selectedIndex = 0
             return false
         }
-
-        saveState()
 
         selectedIndex--
         selectedCandidate = regionList.regions!![selectedIndex]
@@ -581,14 +586,14 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
     }
 
     private fun move(x: Float, y: Float) {
-        saveState()
+        onUpdate()
 
         selectedCandidate.rect.offset(x, y)
         validateRect(selectedCandidate.rect)
     }
 
     private fun expand(left: Float = 0.0f, top: Float = 0.0f, right: Float = 0.0f, bottom: Float = 0.0f) {
-        saveState()
+        onUpdate()
 
         selectedCandidate.rect.left += left
         selectedCandidate.rect.top += top
@@ -599,7 +604,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
     }
 
     private fun deleteRegion() {
-        saveState()
+        onUpdate()
 
         regionList.regions!!.remove(selectedCandidate)
 
@@ -616,7 +621,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
     }
 
     private fun addRect(rect: Region.Rect) {
-        saveState()
+        onUpdate()
 
         selectedCandidate = Region(1.0, settings.defaultLabelNumber, rect)
         regionList.regions!!.add(selectedCandidate)
@@ -628,7 +633,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
     }
 
     fun reset(reverse: Boolean = false) {
-        saveState()
+        onUpdate()
 
         if (regionList.regions === null) {
             regionList.regions = ArrayList<Region>()
@@ -655,7 +660,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
     }
 
     fun merge() {
-        saveState()
+        onUpdate()
 
         if (regionList.regions === null) {
             regionList.regions = ArrayList<Region>()
