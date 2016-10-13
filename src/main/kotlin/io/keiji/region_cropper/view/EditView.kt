@@ -177,6 +177,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
                     event.isControlDown && event.code == KeyCode.Z -> restoreState()
 
                     deletable && event.code == KeyCode.BACK_SPACE -> deleteRegion()
+                    !deletable && event.code == KeyCode.BACK_SPACE -> selectNextRegion()
                     event.code == KeyCode.DIGIT0 -> setLabel(0)
                     event.code == KeyCode.DIGIT1 -> setLabel(1)
                     event.code == KeyCode.DIGIT2 -> setLabel(2)
@@ -208,6 +209,8 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
                         /* do nothing */
                     }
 
+                    event.code == KeyCode.ADD -> expand(left = -shiftValue, top = -shiftValue, right = shiftValue, bottom = shiftValue)
+                    event.code == KeyCode.SUBTRACT -> expand(left = shiftValue, top = shiftValue, right = -shiftValue, bottom = -shiftValue)
                     event.isShiftDown && event.code == KeyCode.D -> deleteRegion()
                     event.isShortcutDown && event.code == KeyCode.LEFT -> expand(right = -shiftValue)
                     event.isShortcutDown && event.code == KeyCode.UP -> expand(bottom = -shiftValue)
