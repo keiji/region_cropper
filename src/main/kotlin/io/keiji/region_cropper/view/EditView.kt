@@ -441,7 +441,8 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
         gc.save()
 
         // 背景をグレーアウト
-        gc.fill = Color.grayRgb(0, 0.5)
+        val color: Color = settings.labelSettings[selectedCandidate.label].webColor.darker()
+        gc.fill = Color.rgb(toColor(color.red), toColor(color.green), toColor(color.blue), 0.5)
         gc.fillRect(
                 0.0,
                 0.0,
@@ -462,6 +463,10 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
         )
 
         gc.restore()
+    }
+
+    private fun toColor(color: Double): Int {
+        return (color * 255).toInt()
     }
 
     private fun drawDraggingRect(gc: GraphicsContext, draggingRect: Region.Rect?) {
