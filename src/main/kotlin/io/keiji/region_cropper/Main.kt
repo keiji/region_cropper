@@ -165,11 +165,17 @@ class Main : App() {
         }
     }
 
+    fun isImage(name: String): Boolean {
+        val lowerName = name.toLowerCase()
+        return lowerName.endsWith(".png")
+                || lowerName.endsWith(".jpg")
+                || lowerName.endsWith(".jpeg")
+                || lowerName.endsWith(".gif")
+    }
+
     fun initialize(file: File) {
         imageFileList = file.parentFile.listFiles().filter {
-            it.name.toLowerCase().endsWith(".png")
-                    || it.name.toLowerCase().endsWith(".jpg")
-                    || it.name.toLowerCase().endsWith(".jpeg")
+            isImage(it.name)
         }
 
         Collections.sort(imageFileList, { a, b ->
@@ -183,9 +189,7 @@ class Main : App() {
 
     fun initialize(files: List<File>) {
         imageFileList = files.filter {
-            it.name.toLowerCase().endsWith(".png")
-                    || it.name.toLowerCase().endsWith(".jpg")
-                    || it.name.toLowerCase().endsWith(".jpeg")
+            isImage(it.name)
         }
 
         Collections.sort(imageFileList, { a, b ->
@@ -340,10 +344,7 @@ class Main : App() {
                 val db = event.getDragboard()
                 if (db.hasFiles()) {
                     val files = db.files.filter {
-                        it.isDirectory
-                                || it.name.toLowerCase().endsWith(".png")
-                                || it.name.toLowerCase().endsWith(".jpg")
-                                || it.name.toLowerCase().endsWith(".jpeg")
+                        it.isDirectory || isImage(it.name)
                     }
 
                     if (files.size > 0) {
@@ -361,10 +362,7 @@ class Main : App() {
                 var success = false
                 if (db.hasFiles()) {
                     val imageFiles = findAllFiles(db.files).filter {
-                        it.name.toLowerCase().endsWith(".png")
-                                || it.name.toLowerCase().endsWith(".jpg")
-                                || it.name.toLowerCase().endsWith(".jpeg")
-
+                        isImage(it.name)
                     }
 
                     if (imageFiles.size == 1) {
@@ -507,7 +505,7 @@ class Main : App() {
         val chooser = FileChooser()
         chooser.let {
             it.setTitle("Select Files")
-            it.extensionFilters.add(FileChooser.ExtensionFilter("Image files", "*.png", "*.jpg", "*.jpeg"))
+            it.extensionFilters.add(FileChooser.ExtensionFilter("Image files", "*.png", "*.jpg", "*.jpeg", "*.gif"))
         }
         return chooser.showOpenDialog(stage)
     }
