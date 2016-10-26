@@ -335,6 +335,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
     }
 
     fun setData(image: Image, regionList: RegionList, candidateList: CandidateList?, reverse: Boolean) {
+        isUpdated = false
         history.clear()
 
         imageData = image

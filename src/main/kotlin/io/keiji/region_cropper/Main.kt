@@ -228,7 +228,7 @@ class Main : App() {
 
                 when {
                     event.code == KeyCode.ESCAPE -> onReset(event.isControlDown)
-                    event.isShortcutDown && event.code == KeyCode.S -> save()
+                    event.isShortcutDown && event.code == KeyCode.S -> save(force = true)
                     event.isShortcutDown && event.code == KeyCode.W -> stage.close()
                     event.isShiftDown && event.code == KeyCode.HOME -> prevPicture(index = 10)
                     event.isShiftDown && event.code == KeyCode.END -> nextPicture(index = 10)
@@ -264,10 +264,12 @@ class Main : App() {
         stage.show()
     }
 
-    private fun save() {
-        if (!editView.isUpdated) {
+    private fun save(force: Boolean = false) {
+        if (!editView.isUpdated && !force) {
             return
         }
+
+        println("Saving..." + resultJsonFile.name)
         editView.regionList.save(resultJsonFile)
     }
 
