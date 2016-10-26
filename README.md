@@ -18,13 +18,15 @@
 
 ### 領域の追加（Add)
 
-ドラッグ&ドロップで領域を設定します。
+ドラッグ&ドロップで領域を設定します。選択中の領域は黄色の枠で表示されます。
+
+![Set Region](images/drag_region.png)
 
 ### 領域の選択（Select)
 
 現在選択中の領域は赤枠で示されます。
 
-![Set Region](images/selected_region.png)
+![Selected Region](images/selected_region.png)
 
 スペース（Space）キーを押すと、選択中の領域がハイライトされます。
 
