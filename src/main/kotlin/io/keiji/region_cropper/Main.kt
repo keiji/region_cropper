@@ -383,8 +383,9 @@ class Main : App() {
 
     private fun setResizeListeners(root: BorderPane, menuBar: MenuBar) {
         /*
-         * canvasのリサイズを検知できない課題がある
-         * また、VBoxなどを設置した場合はリサイズ時に縮小イベントをキャッチしない課題がある
+         * 課題
+         * canvasのリサイズを検知できない
+         * また、VBoxなどを設置した場合はリサイズ時に縮小イベントをキャッチしない
          */
         root.widthProperty().addListener(
                 {
