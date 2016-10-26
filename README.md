@@ -12,9 +12,9 @@
 
     $ java -jar region_cropper_main.jar
 
-### 処理するディレクトリの選択（Select Directory）
+### 処理する画像・ディレクトリを選択（Drop Images or Directories）
 
-![Select Directory](images/select_directory.png)
+![Select Directory](images/drop_images_or_directories.png)
 
 ### 領域の追加（Add)
 
@@ -24,11 +24,13 @@
 
 現在選択中の領域は赤枠で示されます。
 
-![Set Region](images/set_region.png)
+![Set Region](images/selected_region.png)
 
-スペース（Space）キーを押すと、選択中の領域以外の場所がグレーアウトされます。
+スペース（Space）キーを押すと、選択中の領域がハイライトされます。
 
-![Set Region](images/focus_region.png)
+![Set Region](images/highlight_region.png)
+
+また、Shift + スペースでハイライト状態でロックできます。もう一度スペースを押すと、ロックを解除します。
 
 | キー | 動作 |
 |:-----------|:------------|
@@ -47,6 +49,7 @@
 | Alt または Option + 方向(←↑→↓) | 領域を「拡大（Expand）」 |
 | Windows または Command + 方向(←↑→↓) | 領域を「縮小（Shrink）」 |
 | 削除（Delete） | 領域を「削除（Delete）」 |
+| Ctrl + z | 元に戻す（Undo） |
 
 Shift を押すと、変化量が小さくなり微調整できます。
 
