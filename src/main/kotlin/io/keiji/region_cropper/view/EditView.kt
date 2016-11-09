@@ -666,6 +666,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
 
         selectedIndex = if (!reverse) 0 else (this.regionList.regions!!.size - 1)
         selectedCandidate = this.regionList.regions!![selectedIndex]
+        isUpdated = false
     }
 
     fun merge() {
