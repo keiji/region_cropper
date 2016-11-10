@@ -269,7 +269,7 @@ class Main : App() {
             return
         }
 
-        println("Saving..." + resultJsonFile.name)
+//        println("Saving..." + resultJsonFile.name)
         editView.regionList.save(resultJsonFile)
     }
 
