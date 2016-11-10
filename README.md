@@ -60,7 +60,7 @@ Shift を押すと、変化量が小さくなり微調整できます。
 数字キーの「0〜9」を押すと、選択した領域にラベルを設定します。
 追加した領域のラベルは、標準で 1 が設定されています。
 
-![Set Region](images/set_label.png)
+![Set Label](images/set_label.png)
 
 また、ラベル 0 は負例として特別な意味を持ちます。
 負例に設定した領域は、編集や削除ができません。
@@ -69,7 +69,7 @@ Shift を押すと、変化量が小さくなり微調整できます。
 
 領域の切り出しには「Quick crop」と「Crop to...」の２つの方法があります。
 
-![Set Region](images/menu_crop.png)
+![Crop](images/menu_crop.png)
 
 「Quick crop」を選択すると、設定している領域を、処理中の画像と同じディレクトリに切り出します。
 出力先のディレクトリを設定したい場合は「Crop to...」を選択します。
