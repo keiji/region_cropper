@@ -1,0 +1,68 @@
+{
+  "view_only" : false,
+  "default_label_number": 1,
+  "selected_region_stroke_color": "#ff00ff",
+  "dragging_region_stroke_color": "#ffcc00",
+  "label_settings": [
+    {
+      "number": 0,
+      "editable": false,
+      "deletable": false,
+      "color": "#000000"
+    },
+    {
+      "number": 1,
+      "editable": true,
+      "deletable": true,
+      "color": "#8FBC8F"
+    },
+    {
+      "number": 2,
+      "editable": true,
+      "deletable": true,
+      "color": "#0000FF"
+    },
+    {
+      "number": 3,
+      "editable": true,
+      "deletable": true,
+      "color": "#DEB887"
+    },
+    {
+      "number": 4,
+      "editable": true,
+      "deletable": true,
+      "color": "#F0FFFF"
+    },
+    {
+      "number": 5,
+      "editable": true,
+      "deletable": true,
+      "color": "#FFA500"
+    },
+    {
+      "number": 6,
+      "editable": true,
+      "deletable": true,
+      "color": "#FFC0CB"
+    },
+    {
+      "number": 7,
+      "editable": true,
+      "deletable": true,
+      "color": "#7FFFD4"
+    },
+    {
+      "number": 8,
+      "editable": true,
+      "deletable": true,
+      "color": "#6B8E23"
+    },
+    {
+      "number": 9,
+      "editable": true,
+      "deletable": true,
+      "color": "#F08080"
+    }
+  ]
+}

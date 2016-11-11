@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.SeparatorMenuItem?>
+<?import javafx.scene.layout.BorderPane?>
+
+<?import javafx.scene.image.ImageView?>
+<?import org.controlsfx.control.StatusBar?>
+<BorderPane id="vbox" xmlns="http://javafx.com/javafx/8.0.76-ea"
+            xmlns:fx="http://javafx.com/fxml/1">
+    <center>
+        <ImageView
+                fx:id="drop_view"
+                opacity="0.25"/>
+    </center>
+    <top>
+        <MenuBar fx:id="menuBar">
+            <Menu text="File" fx:id="menu_file">
+                <MenuItem fx:id="menu_open_file" text="Open File"/>
+                <MenuItem fx:id="menu_open_directory" text="Open Directory"/>
+                <SeparatorMenuItem/>
+                <MenuItem fx:id="menu_quit" text="Quit"/>
+            </Menu>
+            <Menu text="Edit" fx:id="menu_edit">
+                <MenuItem text="Undo"/>
+                <SeparatorMenuItem/>
+                <MenuItem text="Quick crop"/>
+                <MenuItem text="Crop to..."/>
+            </Menu>
+            <Menu text="Help" fx:id="menu_help">
+                <MenuItem fx:id="menu_license" text="Licenses"/>
+                <SeparatorMenuItem/>
+                <MenuItem fx:id="menu_about" text="About"/>
+            </Menu>
+        </MenuBar>
+    </top>
+    <bottom>
+        <StatusBar fx:id="statusBar" />
+    </bottom>
+</BorderPane>
