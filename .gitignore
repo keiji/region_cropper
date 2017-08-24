@@ -44,3 +44,5 @@ crashlytics-build.properties
 fabric.properties
 
 build
+
+__pycache__
