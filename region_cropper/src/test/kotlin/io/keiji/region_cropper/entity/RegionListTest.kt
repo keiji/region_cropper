@@ -28,7 +28,6 @@ class RegionListTest {
         assertEquals("mizuasato-BkoKavZCQAAjU7e.jpg", candidateList!!.fileName)
         assertEquals("2016-09-11T13:11:03.074767", candidateList!!.createdAt)
         assertEquals("20160906153112", candidateList!!.detectedFaces.modelVersion)
-        assertEquals("20160906", candidateList!!.detectedFaces.engineVersion)
 
         assertEquals(7, candidateList!!.detectedFaces.regions.size)
 
