@@ -34,17 +34,26 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="Gradle: no.tornado:tornadofx:1.7.17" level="project" />
-    <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.2.60" level="project" />
+    <orderEntry type="module-library">
+      <library name="Gradle: io.reactivex:rxkotlin:2.3.0">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../Could not find io.reactivex:rxkotlin:2.3.0.&#10;Searched in the following locations:&#10;  - https:/repo.maven.apache.org/maven2/io/reactivex/rxkotlin/2.3.0/rxkotlin-2.3.0.pom&#10;  - https:/repo.maven.apache.org/maven2/io/reactivex/rxkotlin/2.3.0/rxkotlin-2.3.0.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
     <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-reflect:1.2.60" level="project" />
-    <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.2.60" level="project" />
+    <orderEntry type="library" name="Gradle: org.controlsfx:controlsfx:8.40.14" level="project" />
     <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib:1.2.60" level="project" />
     <orderEntry type="library" name="Gradle: junit:junit:4.4" level="project" />
     <orderEntry type="library" name="Gradle: com.google.code.gson:gson:2.8.5" level="project" />
-    <orderEntry type="library" name="Gradle: org.controlsfx:controlsfx:8.40.14" level="project" />
+    <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.2.60" level="project" />
     <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-common:1.2.60" level="project" />
     <orderEntry type="library" name="Gradle: org.jetbrains:annotations:13.0" level="project" />
     <orderEntry type="library" name="Gradle: org.glassfish:javax.json:1.1.2" level="project" />
+    <orderEntry type="library" name="Gradle: no.tornado:tornadofx:1.7.17" level="project" />
+    <orderEntry type="library" name="Gradle: org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.2.60" level="project" />
     <orderEntry type="library" name="Gradle: javax.json:javax.json-api:1.1.2" level="project" />
   </component>
 </module>
