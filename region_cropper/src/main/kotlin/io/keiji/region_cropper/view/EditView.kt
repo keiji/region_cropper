@@ -106,7 +106,6 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
 
     lateinit var imageData: Image
     lateinit var regionList: RegionList
-    var candidateList: CandidateList? = null
 
     private val history: History = History()
 
@@ -334,22 +333,15 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
         point.y = yPos
     }
 
-    fun setData(image: Image, regionList: RegionList, candidateList: CandidateList?, reverse: Boolean) {
+    fun setData(image: Image, regionList: RegionList, reverse: Boolean) {
         isUpdated = false
         history.clear()
 
         imageData = image
         this.regionList = regionList
-        this.candidateList = candidateList
 
         if (regionList.regions === null) {
-            regionList.regions = ArrayList<Region>()
-
-            if (candidateList !== null) {
-                for (r: Region in candidateList.detectedFaces.regions) {
-                    regionList.regions!!.add(r.deepCopy())
-                }
-            }
+            regionList.regions = ArrayList()
         }
 
         Collections.sort(regionList.regions, PositionComparator())
@@ -404,17 +396,10 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
         gc.lineWidth = 2.0
 
         if (settings.viewOnly) {
-            if (candidateList != null) {
-                gc.save()
+            gc.save()
 
-                gc.lineWidth = 1.0
-                gc.setLineDashes(5.0, 2.0)
-
-                for (c: Region in candidateList!!.detectedFaces.regions) {
-                    drawRegion(c, gc)
-                }
-                gc.restore()
-            }
+            gc.lineWidth = 1.0
+            gc.setLineDashes(5.0, 2.0)
 
             gc.restore()
             return
@@ -650,12 +635,6 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
             regionList.regions!!.clear()
         }
 
-        if (candidateList !== null) {
-            for (r: Region in candidateList!!.detectedFaces.regions) {
-                this.regionList.regions!!.add(r.deepCopy())
-            }
-        }
-
         Collections.sort(regionList.regions, PositionComparator())
 
         if (regionList.regions!!.size == 0) {
@@ -674,22 +653,6 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
 
         if (regionList.regions === null) {
             regionList.regions = ArrayList<Region>()
-        }
-
-        if (candidateList !== null) {
-            for (r: Region in candidateList!!.detectedFaces.regions) {
-                var existFlag: Boolean = false
-                for (er: Region in regionList.regions!!) {
-                    if (er.rect == r.rect) {
-                        existFlag = true
-                        break
-                    }
-                }
-
-                if (!existFlag) {
-                    this.regionList.regions!!.add(r.deepCopy())
-                }
-            }
         }
 
         Collections.sort(regionList.regions, PositionComparator())

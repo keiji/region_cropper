@@ -1,6 +1,5 @@
 package io.keiji.region_cropper
 
-import io.keiji.region_cropper.entity.CandidateList
 import io.keiji.region_cropper.entity.Region
 import io.keiji.region_cropper.entity.RegionList
 import io.keiji.region_cropper.entity.Settings
@@ -66,18 +65,9 @@ class Main : App() {
             return imageFileList[imageFileIndex]
         }
 
-    private lateinit var candidateFileList: List<File>
-    private var candidateFileIndex: Int = 0
-
-    private val candidateFile: File
-        get() {
-            return candidateFileList[candidateFileIndex]
-        }
-
     private lateinit var resultJsonFile: File
 
     private lateinit var imageData: Image
-    private var candidateList: CandidateList? = null
 
     private val menuCallback = object : MainMenuController.Callback {
         override fun openFile() {
@@ -234,10 +224,6 @@ class Main : App() {
                     event.isShiftDown && event.code == KeyCode.END -> nextPicture(index = 10)
                     event.code == KeyCode.HOME -> prevPicture()
                     event.code == KeyCode.END -> nextPicture()
-                    event.isShiftDown && event.code == KeyCode.PAGE_UP -> prevCandidate(index = 10)
-                    event.isShiftDown && event.code == KeyCode.PAGE_DOWN -> nextCandidate(index = 10)
-                    event.code == KeyCode.PAGE_UP -> prevCandidate()
-                    event.code == KeyCode.PAGE_DOWN -> nextCandidate()
                 }
             }
         })
@@ -271,44 +257,6 @@ class Main : App() {
 
 //        println("Saving..." + resultJsonFile.name)
         editView.regionList.save(resultJsonFile)
-    }
-
-    private fun nextCandidate(index: Int = 1) {
-        if (candidateList === null) {
-            return
-        }
-
-        candidateFileIndex += index
-
-        if (candidateFileIndex > candidateFileList.size - 1) {
-            candidateFileIndex = candidateFileList.size - 1
-        }
-
-        candidateList = CandidateList.getInstance(candidateFile.absolutePath)
-        editView.candidateList = candidateList
-
-        editView.redraw()
-
-        updateStateusBarText()
-    }
-
-    private fun prevCandidate(index: Int = 1) {
-        if (candidateList === null) {
-            return
-        }
-
-        candidateFileIndex -= index
-
-        if (candidateFileIndex < 0) {
-            candidateFileIndex = 0
-        }
-
-        candidateList = CandidateList.getInstance(candidateFile.absolutePath)
-        editView.candidateList = candidateList
-
-        editView.redraw()
-
-        updateStateusBarText()
     }
 
     private fun showEditView() {
@@ -522,10 +470,7 @@ class Main : App() {
     }
 
     private fun showMergeDialog() {
-        if (candidateList === null) {
-            return
 
-        }
         Alert(Alert.AlertType.CONFIRMATION).let {
             val message: String = "Merge latest candidates?"
 
@@ -546,9 +491,7 @@ class Main : App() {
 
     private fun showResetDialog() {
         Alert(Alert.AlertType.CONFIRMATION).let {
-            val message: String = if (candidateList === null) "Clear regions?" else "Discard changes?"
-
-            it.setContentText(message)
+            it.setContentText("Discard changes?")
             it.setHeaderText(null)
 
             val okButton: Button = it.dialogPane.lookupButton(ButtonType.OK) as Button
@@ -603,21 +546,11 @@ class Main : App() {
             regionList = RegionList("Region Cropper", imageFile.name, null, createdAt())
         }
 
-        candidateFileList = dir.listFiles().toList().filter { f -> f.name.startsWith(String.format("%s-candidate", fileName)) && f.name.endsWith(".json") }
-        Collections.sort(candidateFileList, Collections.reverseOrder())
-        candidateFileIndex = 0
-
-        if (candidateFileList.size > 0) {
-            candidateList = CandidateList.getInstance(candidateFile.absolutePath)
-        } else {
-            candidateList = null
-        }
-
         imageData = Image(imageFile.toURI().toString())
 
         showEditView()
 
-        editView.setData(imageData, regionList, candidateList, reverse)
+        editView.setData(imageData, regionList, reverse)
 
         updateStateusBarText()
     }
@@ -626,12 +559,7 @@ class Main : App() {
         stage.title = String.format("%s (%,3d/%,3d)",
                 imageFile.name, (imageFileIndex + 1), imageFileList.size)
 
-        if (candidateList !== null) {
-            statusBar.text = String.format("Candidates: %s (%,3d/%,3d)",
-                    candidateFile.name, (candidateFileIndex + 1), candidateFileList.size)
-        } else {
-            statusBar.text = ""
-        }
+        statusBar.text = ""
     }
 
     private fun createdAt(): String {
