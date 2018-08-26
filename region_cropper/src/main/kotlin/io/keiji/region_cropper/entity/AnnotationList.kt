@@ -19,6 +19,7 @@ limitations under the License.
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.annotations.SerializedName
+import io.keiji.region_cropper.Utils
 import java.io.File
 import java.nio.charset.Charset
 import java.util.*
@@ -39,34 +40,37 @@ class PositionComparator : Comparator<Region> {
     }
 }
 
-data class RegionList(
+data class AnnotationList(
         @SerializedName("generator")
-        val generator: String,
+        val generator: String?,
 
         @SerializedName("file_name")
         val fileName: String,
 
         @SerializedName("regions")
-        var regions: ArrayList<Region>?,
+        val regions: ArrayList<Region>,
 
         @SerializedName("created_at")
-        val createdAt: String
+        var createdAt: String?
 ) {
     companion object {
-        fun getInstance(filePath: String): RegionList {
+        fun getInstance(filePath: String): AnnotationList {
             val source = File(filePath).readText(Charset.forName("UTF-8"))
-            return Gson().fromJson(source, RegionList::class.java)!!
+            val obj = Gson().fromJson(source, AnnotationList::class.java)!!
+            obj.createdAt = obj.createdAt ?: Utils.createdAt()
+
+            return obj
         }
     }
 
-    fun save(file: File?) {
+    fun save(file: File) {
         val gson = GsonBuilder().setPrettyPrinting().create();
-        file!!.writeText(gson.toJson(this, RegionList::class.java), Charset.forName("UTF-8"))
+        file.writeText(gson.toJson(this, AnnotationList::class.java), Charset.forName("UTF-8"))
     }
 
-    fun deepCopy(): RegionList {
+    fun deepCopy(): AnnotationList {
         val copiedRegions = ArrayList<Region>()
-        for (region: Region in regions!!) {
+        for (region: Region in regions) {
             copiedRegions.add(region.deepCopy())
         }
         return copy(regions = copiedRegions)

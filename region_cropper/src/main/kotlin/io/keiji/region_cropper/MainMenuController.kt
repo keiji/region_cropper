@@ -20,7 +20,8 @@ import javafx.event.ActionEvent
 import javafx.event.EventHandler
 import javafx.scene.control.MenuBar;
 
-class MainMenuController(menuBar: MenuBar, val callback: Callback) {
+class MainMenuController(menuBar: MenuBar,
+                         private val callback: Callback) {
 
     interface Callback {
         fun openFile()
@@ -37,57 +38,56 @@ class MainMenuController(menuBar: MenuBar, val callback: Callback) {
 
     init {
         // File
-        menuBar.menus[0].let {
+        menuBar.menus[0].let { menu ->
             // Open File
-            it.items[0].onAction = EventHandler<ActionEvent> {
+            menu.items[0].onAction = EventHandler<ActionEvent> {
                 callback.openFile()
             }
 
             // Open File
-            it.items[1].onAction = EventHandler<ActionEvent> {
+            menu.items[1].onAction = EventHandler<ActionEvent> {
                 callback.openDirectory()
             }
 
             // Separator
 
             // Quit
-            it.items[3].onAction = EventHandler<ActionEvent> {
+            menu.items[3].onAction = EventHandler<ActionEvent> {
                 callback.close()
             }
         }
 
         // Edit
-        menuBar.menus[1].let {
+        menuBar.menus[1].let { menu ->
             // Undo
-            it.items[0].onAction = EventHandler<ActionEvent> {
+            menu.items[0].onAction = EventHandler<ActionEvent> {
                 callback.undo()
             }
 
             // Separator
 
             // Quick Crop
-            it.items[2].onAction = EventHandler<ActionEvent> {
+            menu.items[2].onAction = EventHandler<ActionEvent> {
                 callback.quickCrop()
             }
 
             // Crop to
-            it.items[3].onAction = EventHandler<ActionEvent> {
+            menu.items[3].onAction = EventHandler<ActionEvent> {
                 callback.cropTo()
             }
         }
 
         // Help
-        menuBar.menus[2].let {
-
+        menuBar.menus[2].let { menu ->
             // Licenses
-            it.items[0].onAction = EventHandler<ActionEvent> {
+            menu.items[0].onAction = EventHandler<ActionEvent> {
                 callback.licenseDialog()
             }
 
             // Separator
 
             // About
-            it.items[2].onAction = EventHandler<ActionEvent> {
+            menu.items[2].onAction = EventHandler<ActionEvent> {
                 callback.aboutDialog()
             }
         }

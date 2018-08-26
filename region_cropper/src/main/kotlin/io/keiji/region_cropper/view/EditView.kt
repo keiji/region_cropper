@@ -28,13 +28,15 @@ import javafx.scene.input.MouseEvent
 import javafx.scene.paint.Color
 import java.util.*
 
-const val MIN_REGION_SIZE = 10.0f
+const val MIN_REGION_SIZE = 1.0f
 const val LIMIT_SAVE_STATE = 200
 
 private val NOT_SELECTED = Region(-1.0, 0,
         Region.Rect(0.0f, 0.0f, 0.0f, 0.0f))
 
-private data class Point(var x: Double, var y: Double) {
+private data class Point(
+        var x: Double,
+        var y: Double) {
 }
 
 class EditView(val callback: Callback, var settings: Settings) : Canvas() {
@@ -46,7 +48,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
 
         data class State(var selectedRegionIndex: Int) {
             var isUpdated: Boolean = false
-            lateinit var regionList: RegionList
+            lateinit var annotationList: AnnotationList
         }
 
         fun clear() {
@@ -54,16 +56,16 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
             index = 0
         }
 
-        fun push(isUpdated: Boolean, selectedRegionIndex: Int, candidateList: RegionList) {
+        fun push(isUpdated: Boolean, selectedRegionIndex: Int, candidateList: AnnotationList) {
             val state = histories[index]
             state.isUpdated = isUpdated
             state.selectedRegionIndex = selectedRegionIndex
-            state.regionList = candidateList
+            state.annotationList = candidateList
 
             index++
             if (index >= histories.size) {
                 index %= histories.size
-                startIndex = startIndex++ % histories.size
+                startIndex = (startIndex + 1) % histories.size
             }
         }
 
@@ -101,214 +103,199 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
 
     private var isInvalidated: Boolean = true
 
-    private val draggingStartPoint: Point = Point(0.0, 0.0)
+    private val draggingStartPoint = Point(0.0, 0.0)
     private var draggingRect: Region.Rect? = null
 
     lateinit var imageData: Image
-    lateinit var regionList: RegionList
+    lateinit var annotationList: AnnotationList
 
     private val history: History = History()
 
     var isUpdated: Boolean = false
-        private set(value) {
-            field = value
-        }
 
     var selectedCandidate: Region = NOT_SELECTED
     private var selectedIndex: Int = 0
 
     private var reticle: Point = Point(0.0, 0.0)
 
-    private val keyLeftImage: Image
-    private val keyUpImage: Image
-    private val keyRightImage: Image
-    private val keyDownImage: Image
+    val cl = javaClass.classLoader
+    private val keyLeftImage = Image(cl.getResourceAsStream("ic_keyboard_arrow_left_red.png"))
+    private val keyUpImage = Image(cl.getResourceAsStream("ic_keyboard_arrow_up_red.png"))
+    private val keyRightImage = Image(cl.getResourceAsStream("ic_keyboard_arrow_right_red.png"))
+    private val keyDownImage = Image(cl.getResourceAsStream("ic_keyboard_arrow_down_red.png"))
 
     private val tempPoint = Point(0.0, 0.0)
 
     init {
-        val cl = javaClass.classLoader
-        keyLeftImage = Image(cl.getResourceAsStream("ic_keyboard_arrow_left_red.png"))
-        keyUpImage = Image(cl.getResourceAsStream("ic_keyboard_arrow_up_red.png"))
-        keyRightImage = Image(cl.getResourceAsStream("ic_keyboard_arrow_right_red.png"))
-        keyDownImage = Image(cl.getResourceAsStream("ic_keyboard_arrow_down_red.png"))
+        addEventFilter(KeyEvent.KEY_PRESSED) { event ->
+            val shiftValue = if (event.isShiftDown) 1.0f else Math.floor(8.0f / scale).toFloat()
 
-        addEventFilter(KeyEvent.KEY_PRESSED, { event ->
-            run {
-                val shiftValue = if (event.isShiftDown) 1.0f else Math.floor(8.0f / scale).toFloat()
+            val labelSetting: Settings.Label = settings.labelSettings[selectedCandidate.label]
+            val editable: Boolean = labelSetting.editable && !settings.viewOnly
 
-                val labelSetting: Settings.Label = settings.labelSettings[selectedCandidate.label]
-                val editable: Boolean = labelSetting.editable && !settings.viewOnly
-                val deletable: Boolean = labelSetting.deletable && !settings.viewOnly
-
-                when {
-                    event.isShiftDown && event.code == KeyCode.SPACE -> isFocus = Focus.Locked
-                    event.code == KeyCode.SPACE -> isFocus = Focus.On
-                    !editable -> {
-                        /* do nothing */
-                    }
-                    event.isAltDown -> {
-                        mode = Mode.Expand
-                        event.consume()
-                    }
-                    event.isShortcutDown -> mode = Mode.Shrink
+            when {
+                event.isShiftDown && event.code == KeyCode.SPACE -> isFocus = Focus.Locked
+                event.code == KeyCode.SPACE -> isFocus = Focus.On
+                !editable -> {
+                    /* do nothing */
                 }
-
-                when {
-                    event.isShiftDown && event.code == KeyCode.ENTER -> {
-                        if (!selectPrevRegion()) {
-                            callback.onPreviousFile(true)
-                        }
-                    }
-                    event.code == KeyCode.ENTER -> {
-                        if (!selectNextRegion()) {
-                            callback.onNextFile()
-                        }
-                    }
-                    event.isShiftDown && event.code == KeyCode.TAB -> {
-                        selectPrevRegion()
-                    }
-                    event.code == KeyCode.TAB -> {
-                        selectNextRegion()
-                    }
-
-                    event.isShortcutDown && event.code == KeyCode.Z -> restoreState()
-                    event.isControlDown && event.code == KeyCode.Z -> restoreState()
-
-                    deletable && event.code == KeyCode.BACK_SPACE -> deleteRegion()
-                    !deletable && event.code == KeyCode.BACK_SPACE -> selectNextRegion()
-                    event.code == KeyCode.DIGIT0 -> setLabel(0)
-                    event.code == KeyCode.DIGIT1 -> setLabel(1)
-                    event.code == KeyCode.DIGIT2 -> setLabel(2)
-                    event.code == KeyCode.DIGIT3 -> setLabel(3)
-                    event.code == KeyCode.DIGIT4 -> setLabel(4)
-                    event.code == KeyCode.DIGIT5 -> setLabel(5)
-                    event.code == KeyCode.DIGIT6 -> setLabel(6)
-                    event.code == KeyCode.DIGIT7 -> setLabel(7)
-                    event.code == KeyCode.DIGIT8 -> setLabel(8)
-                    event.code == KeyCode.DIGIT9 -> setLabel(9)
-
-                    event.code == KeyCode.DECIMAL -> {
-                        if (!selectPrevRegion()) {
-                            callback.onPreviousFile(true)
-                        }
-                    }
-                    event.code == KeyCode.NUMPAD0 -> setLabel(0, true)
-                    event.code == KeyCode.NUMPAD1 -> setLabel(1, true)
-                    event.code == KeyCode.NUMPAD2 -> setLabel(2, true)
-                    event.code == KeyCode.NUMPAD3 -> setLabel(3, true)
-                    event.code == KeyCode.NUMPAD4 -> setLabel(4, true)
-                    event.code == KeyCode.NUMPAD5 -> setLabel(5, true)
-                    event.code == KeyCode.NUMPAD6 -> setLabel(6, true)
-                    event.code == KeyCode.NUMPAD7 -> setLabel(7, true)
-                    event.code == KeyCode.NUMPAD8 -> setLabel(8, true)
-                    event.code == KeyCode.NUMPAD9 -> setLabel(9, true)
-
-                    !editable -> {
-                        /* do nothing */
-                    }
-
-                    event.code == KeyCode.ADD -> expand(left = -shiftValue, top = -shiftValue, right = shiftValue, bottom = shiftValue)
-                    event.code == KeyCode.SUBTRACT -> expand(left = shiftValue, top = shiftValue, right = -shiftValue, bottom = -shiftValue)
-                    event.isShiftDown && event.code == KeyCode.D -> deleteRegion()
-                    event.isShortcutDown && event.code == KeyCode.LEFT -> expand(right = -shiftValue)
-                    event.isShortcutDown && event.code == KeyCode.UP -> expand(bottom = -shiftValue)
-                    event.isShortcutDown && event.code == KeyCode.RIGHT -> expand(left = shiftValue)
-                    event.isShortcutDown && event.code == KeyCode.DOWN -> expand(top = shiftValue)
-                    event.isAltDown && event.code == KeyCode.LEFT -> expand(left = -shiftValue)
-                    event.isAltDown && event.code == KeyCode.UP -> expand(top = -shiftValue)
-                    event.isAltDown && event.code == KeyCode.RIGHT -> expand(right = shiftValue)
-                    event.isAltDown && event.code == KeyCode.DOWN -> expand(bottom = shiftValue)
-                    event.code == KeyCode.LEFT -> move(-shiftValue, 0.0f)
-                    event.code == KeyCode.UP -> move(0.0f, -shiftValue)
-                    event.code == KeyCode.RIGHT -> move(shiftValue, 0.0f)
-                    event.code == KeyCode.DOWN -> move(0.0f, shiftValue)
+                event.isAltDown -> {
+                    mode = Mode.Expand
+                    event.consume()
                 }
-                redraw()
+                event.isShortcutDown -> mode = Mode.Shrink
             }
-        })
 
-        addEventFilter(KeyEvent.KEY_RELEASED, { event ->
-            run {
-                when {
-                    isFocus != Focus.Locked && event.code == KeyCode.SPACE -> isFocus = Focus.Off
-                    event.isShortcutDown -> mode = Mode.Shrink
-                    event.isAltDown -> mode = Mode.Expand
-                    else -> mode = Mode.Normal
-                }
-                redraw()
-            }
-        })
-
-        addEventFilter(MouseEvent.ANY, { event ->
-            run {
-                convertLogicalPoint(event.x, event.y, tempPoint)
-
-                when (event.eventType) {
-                    MouseEvent.MOUSE_ENTERED -> cursor = Cursor.CROSSHAIR
-                    MouseEvent.MOUSE_EXITED -> cursor = Cursor.DEFAULT
-                }
-
-                when {
-                    settings.viewOnly -> {
-                        /* do nothing */
+            when {
+                event.isShiftDown && event.code == KeyCode.ENTER -> {
+                    if (!selectPrevRegion()) {
+                        callback.onPreviousFile(true)
                     }
-                    event.button == MouseButton.PRIMARY && event.eventType == MouseEvent.MOUSE_DRAGGED -> {
-                        if (draggingRect === null) {
-                            draggingStartPoint.x = tempPoint.x
-                            draggingStartPoint.y = tempPoint.y
-                            draggingRect = Region.Rect(0.0f, 0.0f, 0.0f, 0.0f)
-                        }
-                        draggingRect!!.left = Math.round(Math.min(draggingStartPoint.x, tempPoint.x)).toFloat()
-                        draggingRect!!.right = Math.round(Math.max(draggingStartPoint.x, tempPoint.x)).toFloat()
-                        draggingRect!!.top = Math.round(Math.min(draggingStartPoint.y, tempPoint.y)).toFloat()
-                        draggingRect!!.bottom = Math.round(Math.max(draggingStartPoint.y, tempPoint.y)).toFloat()
+                }
+                event.code == KeyCode.ENTER -> {
+                    if (!selectNextRegion()) {
+                        callback.onNextFile()
+                    }
+                }
+                event.isShiftDown && event.code == KeyCode.TAB -> {
+                    selectPrevRegion()
+                }
+                event.code == KeyCode.TAB -> {
+                    selectNextRegion()
+                }
 
+                event.isShortcutDown && event.code == KeyCode.Z -> restoreState()
+                event.isControlDown && event.code == KeyCode.Z -> restoreState()
+
+                event.code == KeyCode.BACK_SPACE -> deleteRegion()
+                event.code == KeyCode.DIGIT0 -> setLabel(0)
+                event.code == KeyCode.DIGIT1 -> setLabel(1)
+                event.code == KeyCode.DIGIT2 -> setLabel(2)
+                event.code == KeyCode.DIGIT3 -> setLabel(3)
+                event.code == KeyCode.DIGIT4 -> setLabel(4)
+                event.code == KeyCode.DIGIT5 -> setLabel(5)
+                event.code == KeyCode.DIGIT6 -> setLabel(6)
+                event.code == KeyCode.DIGIT7 -> setLabel(7)
+                event.code == KeyCode.DIGIT8 -> setLabel(8)
+                event.code == KeyCode.DIGIT9 -> setLabel(9)
+
+                event.code == KeyCode.DECIMAL -> {
+                    if (!selectPrevRegion()) {
+                        callback.onPreviousFile(true)
+                    }
+                }
+                event.code == KeyCode.NUMPAD0 -> setLabel(0, true)
+                event.code == KeyCode.NUMPAD1 -> setLabel(1, true)
+                event.code == KeyCode.NUMPAD2 -> setLabel(2, true)
+                event.code == KeyCode.NUMPAD3 -> setLabel(3, true)
+                event.code == KeyCode.NUMPAD4 -> setLabel(4, true)
+                event.code == KeyCode.NUMPAD5 -> setLabel(5, true)
+                event.code == KeyCode.NUMPAD6 -> setLabel(6, true)
+                event.code == KeyCode.NUMPAD7 -> setLabel(7, true)
+                event.code == KeyCode.NUMPAD8 -> setLabel(8, true)
+                event.code == KeyCode.NUMPAD9 -> setLabel(9, true)
+
+                !editable -> {
+                    /* do nothing */
+                }
+
+                event.code == KeyCode.ADD -> expand(left = -shiftValue, top = -shiftValue, right = shiftValue, bottom = shiftValue)
+                event.code == KeyCode.SUBTRACT -> expand(left = shiftValue, top = shiftValue, right = -shiftValue, bottom = -shiftValue)
+                event.isShiftDown && event.code == KeyCode.D -> deleteRegion()
+                event.isShortcutDown && event.code == KeyCode.LEFT -> expand(right = -shiftValue)
+                event.isShortcutDown && event.code == KeyCode.UP -> expand(bottom = -shiftValue)
+                event.isShortcutDown && event.code == KeyCode.RIGHT -> expand(left = shiftValue)
+                event.isShortcutDown && event.code == KeyCode.DOWN -> expand(top = shiftValue)
+                event.isAltDown && event.code == KeyCode.LEFT -> expand(left = -shiftValue)
+                event.isAltDown && event.code == KeyCode.UP -> expand(top = -shiftValue)
+                event.isAltDown && event.code == KeyCode.RIGHT -> expand(right = shiftValue)
+                event.isAltDown && event.code == KeyCode.DOWN -> expand(bottom = shiftValue)
+                event.code == KeyCode.LEFT -> move(-shiftValue, 0.0f)
+                event.code == KeyCode.UP -> move(0.0f, -shiftValue)
+                event.code == KeyCode.RIGHT -> move(shiftValue, 0.0f)
+                event.code == KeyCode.DOWN -> move(0.0f, shiftValue)
+            }
+            redraw()
+        }
+
+        addEventFilter(KeyEvent.KEY_RELEASED) { event ->
+            when {
+                isFocus != Focus.Locked && event.code == KeyCode.SPACE -> isFocus = Focus.Off
+                event.isShortcutDown -> mode = Mode.Shrink
+                event.isAltDown -> mode = Mode.Expand
+                else -> mode = Mode.Normal
+            }
+            redraw()
+        }
+
+        addEventFilter(MouseEvent.ANY) { event ->
+            convertLogicalPoint(event.x, event.y, tempPoint)
+
+            cursor = when (event.eventType) {
+                MouseEvent.MOUSE_ENTERED -> Cursor.CROSSHAIR
+                MouseEvent.MOUSE_EXITED -> Cursor.DEFAULT
+                else -> Cursor.DEFAULT
+            }
+
+            when {
+                settings.viewOnly -> {
+                    /* do nothing */
+                }
+                event.button == MouseButton.PRIMARY && event.eventType == MouseEvent.MOUSE_DRAGGED -> {
+                    if (draggingRect == null) {
+                        draggingStartPoint.x = tempPoint.x
+                        draggingStartPoint.y = tempPoint.y
+                        draggingRect = Region.Rect(0.0f, 0.0f, 0.0f, 0.0f)
+                    }
+
+                    draggingRect?.let {
+                        it.left = Math.round(Math.min(draggingStartPoint.x, tempPoint.x)).toFloat()
+                        it.right = Math.round(Math.max(draggingStartPoint.x, tempPoint.x)).toFloat()
+                        it.top = Math.round(Math.min(draggingStartPoint.y, tempPoint.y)).toFloat()
+                        it.bottom = Math.round(Math.max(draggingStartPoint.y, tempPoint.y)).toFloat()
+                    }
+
+                    isInvalidated = true
+                }
+                event.button == MouseButton.PRIMARY && event.eventType == MouseEvent.MOUSE_RELEASED -> {
+                    draggingRect?.let {
+                        validateRect(it)
+                        addRect(it)
                         isInvalidated = true
                     }
-                    event.button == MouseButton.PRIMARY && event.eventType == MouseEvent.MOUSE_RELEASED -> {
-                        if (draggingRect != null) {
-                            validateRect(draggingRect!!)
-                            addRect(draggingRect!!)
-                            draggingRect = null
-
-                            isInvalidated = true
-                        }
-                    }
-                    else -> convertLogicalPoint(event.sceneX, event.sceneY, reticle)
+                    draggingRect = null
                 }
-                draw()
+                else -> convertLogicalPoint(event.sceneX, event.sceneY, reticle)
             }
-        })
+            draw()
+        }
     }
 
     private fun onUpdate() {
         isUpdated = true
-        history.push(isUpdated, selectedIndex, regionList.deepCopy())
+        history.push(isUpdated, selectedIndex, annotationList.deepCopy())
     }
 
     fun restoreState() {
         val state: History.State? = history.pop()
-        if (state == null) {
-            return
-        }
+        state ?: return
 
         isUpdated = state.isUpdated
         selectedIndex = state.selectedRegionIndex
-        regionList = state.regionList
+        annotationList = state.annotationList
 
-        if (selectedIndex >= regionList.regions!!.size
-                || (selectedIndex < 0 && regionList.regions!!.size > 0)) {
-            selectedIndex = regionList.regions!!.size - 1
+        if (selectedIndex >= annotationList.regions.size
+                || (selectedIndex < 0 && annotationList.regions.isNotEmpty())) {
+            selectedIndex = annotationList.regions.size - 1
         }
 
-        selectedCandidate = if (selectedIndex < 0) NOT_SELECTED else regionList.regions!![selectedIndex]
+        selectedCandidate = if (selectedIndex < 0) NOT_SELECTED else annotationList.regions[selectedIndex]
 
         redraw()
     }
 
     private fun setLabel(label: Int, moveNext: Boolean = false) {
-        if (selectedCandidate === NOT_SELECTED) {
+        if (selectedCandidate == NOT_SELECTED) {
             return
         }
 
@@ -333,26 +320,19 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
         point.y = yPos
     }
 
-    fun setData(image: Image, regionList: RegionList, reverse: Boolean) {
+    fun setData(image: Image, annotationList: AnnotationList, reverse: Boolean) {
         isUpdated = false
         history.clear()
 
         imageData = image
-        this.regionList = regionList
+        this.annotationList = annotationList
 
-        if (regionList.regions === null) {
-            regionList.regions = ArrayList()
-        }
+        Collections.sort(annotationList.regions, PositionComparator())
 
-        Collections.sort(regionList.regions, PositionComparator())
+        selectedIndex = -1
+        selectedCandidate = NOT_SELECTED
 
-        if (regionList.regions!!.size == 0 || settings.viewOnly) {
-            selectedIndex = -1
-            selectedCandidate = NOT_SELECTED
-        } else {
-            selectedIndex = if (!reverse) 0 else (this.regionList.regions!!.size - 1)
-            selectedCandidate = this.regionList.regions!![selectedIndex]
-        }
+        selectNextRegion()
 
         onResize()
     }
@@ -381,46 +361,49 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
 
         isInvalidated = false
 
-        val gc = graphicsContext2D
-        gc.clearRect(0.0, 0.0, width, height)
+        graphicsContext2D.let { gc ->
+            gc.clearRect(0.0, 0.0, width, height)
 
-        gc.save()
-
-        gc.translate(paddingHorizontal, paddingVertical)
-        gc.drawImage(imageData,
-                0.0,
-                0.0,
-                imageData.width * scale,
-                imageData.height * scale)
-
-        gc.lineWidth = 2.0
-
-        if (settings.viewOnly) {
             gc.save()
 
-            gc.lineWidth = 1.0
-            gc.setLineDashes(5.0, 2.0)
+            gc.translate(paddingHorizontal, paddingVertical)
+            gc.drawImage(imageData,
+                    0.0,
+                    0.0,
+                    imageData.width * scale,
+                    imageData.height * scale)
+
+            gc.lineWidth = 2.0
+
+            if (settings.viewOnly) {
+                gc.save()
+
+                gc.lineWidth = 1.0
+                gc.setLineDashes(5.0, 2.0)
+
+                gc.restore()
+                return
+            }
+
+            for (c: Region in annotationList.regions) {
+                if (c == selectedCandidate) {
+                    continue
+                }
+                drawRegion(c, gc)
+            }
+
+            if (isFocus.isEnabled) {
+                grayOut(gc)
+            }
+
+            drawRegion(selectedCandidate, gc, isSelected = true)
+
+            draggingRect?.let {
+                drawDraggingRect(gc, it)
+            }
 
             gc.restore()
-            return
         }
-
-        for (c: Region in regionList.regions!!) {
-            if (c === selectedCandidate) {
-                continue
-            }
-            drawRegion(c, gc)
-        }
-
-        if (isFocus.isEnabled) {
-            grayOut(gc)
-        }
-
-        drawRegion(selectedCandidate, gc, isSelected = true)
-
-        drawDraggingRect(gc, draggingRect)
-
-        gc.restore()
     }
 
     private fun grayOut(gc: GraphicsContext) {
@@ -455,13 +438,10 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
         return (color * 255).toInt()
     }
 
-    private fun drawDraggingRect(gc: GraphicsContext, draggingRect: Region.Rect?) {
-        if (draggingRect === null) {
-            return
-        }
-
+    private fun drawDraggingRect(gc: GraphicsContext, draggingRect: Region.Rect) {
         gc.stroke = settings.draggingRegionStrokeWebColor
-        gc.strokeRect(draggingRect.left.toDouble() * scale,
+        gc.strokeRect(
+                draggingRect.left.toDouble() * scale,
                 draggingRect.top.toDouble() * scale,
                 draggingRect.width().toDouble() * scale,
                 draggingRect.height().toDouble() * scale)
@@ -470,13 +450,17 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
     private val margin: Double = 2.0
 
     private fun drawRegion(c: Region, gc: GraphicsContext, isSelected: Boolean = false) {
-        if (c === NOT_SELECTED) {
+        if (c == NOT_SELECTED) {
+            return
+        }
+
+        val visible = settings.labelSettings[c.label].visible
+        if (!visible) {
             return
         }
 
         val rect: Region.Rect = c.rect
-
-        val color: Color = settings.labelSettings[c.label].webColor
+        val color = settings.labelSettings[c.label].webColor
 
         gc.stroke = color
         gc.strokeRect(
@@ -533,12 +517,22 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
             return false
         }
 
-        if (selectedIndex >= regionList.regions!!.size - 1) {
+        if (selectedIndex == annotationList.regions.size - 1) {
             return false
         }
 
         selectedIndex++
-        selectedCandidate = regionList.regions!![selectedIndex]
+        selectedIndex = Math.min(selectedIndex, annotationList.regions.size - 1)
+
+        if (selectedIndex >= 0) {
+            selectedCandidate = annotationList.regions[selectedIndex]
+        } else {
+            selectedCandidate = NOT_SELECTED
+        }
+
+        if (!settings.labelSettings[selectedCandidate.label].visible) {
+            return selectNextRegion()
+        }
         return true
     }
 
@@ -547,13 +541,22 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
             return false
         }
 
-        if (selectedIndex <= 0) {
-            selectedIndex = 0
+        if (selectedIndex == 0) {
             return false
         }
 
         selectedIndex--
-        selectedCandidate = regionList.regions!![selectedIndex]
+        selectedIndex = Math.max(selectedIndex, 0)
+
+        if (selectedIndex >= 0) {
+            selectedCandidate = annotationList.regions[selectedIndex]
+        } else {
+            selectedCandidate = NOT_SELECTED
+        }
+
+        if (!settings.labelSettings[selectedCandidate.label].visible) {
+            return selectPrevRegion()
+        }
         return true
     }
 
@@ -600,70 +603,45 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
     private fun deleteRegion() {
         onUpdate()
 
-        regionList.regions!!.remove(selectedCandidate)
+        annotationList.regions.remove(selectedCandidate)
 
-        if (selectedIndex > regionList.regions!!.size - 1) {
-            selectedIndex -= 1
-        }
+        selectedIndex--
 
         if (selectedIndex < 0) {
             selectedCandidate = NOT_SELECTED
             return
         }
 
-        selectedCandidate = regionList.regions!![selectedIndex]
+        selectedCandidate = annotationList.regions[selectedIndex]
     }
 
     private fun addRect(rect: Region.Rect) {
         onUpdate()
 
         selectedCandidate = Region(1.0, settings.defaultLabelNumber, rect)
-        regionList.regions!!.add(selectedCandidate)
+        annotationList.regions.add(selectedCandidate)
 
-        Collections.sort(regionList.regions!!, PositionComparator())
+        Collections.sort(annotationList.regions, PositionComparator())
 
-        selectedIndex = regionList.regions!!.indexOf(selectedCandidate)
+        selectedIndex = annotationList.regions.indexOf(selectedCandidate)
         validateRect(selectedCandidate.rect)
     }
 
     fun reset(reverse: Boolean = false) {
         onUpdate()
 
-        if (regionList.regions === null) {
-            regionList.regions = ArrayList<Region>()
-        } else {
-            regionList.regions!!.clear()
-        }
+        annotationList.regions.clear()
 
-        Collections.sort(regionList.regions, PositionComparator())
+        Collections.sort(annotationList.regions, PositionComparator())
 
-        if (regionList.regions!!.size == 0) {
+        if (annotationList.regions.isEmpty()) {
             selectedIndex = -1
             selectedCandidate = NOT_SELECTED
             return
         }
 
-        selectedIndex = if (!reverse) 0 else (this.regionList.regions!!.size - 1)
-        selectedCandidate = this.regionList.regions!![selectedIndex]
+        selectedIndex = if (!reverse) 0 else (this.annotationList.regions.size - 1)
+        selectedCandidate = this.annotationList.regions[selectedIndex]
         isUpdated = false
-    }
-
-    fun merge() {
-        onUpdate()
-
-        if (regionList.regions === null) {
-            regionList.regions = ArrayList<Region>()
-        }
-
-        Collections.sort(regionList.regions, PositionComparator())
-
-        if (regionList.regions!!.size == 0) {
-            selectedIndex = -1
-            selectedCandidate = NOT_SELECTED
-            return
-        }
-
-        selectedIndex = 0
-        selectedCandidate = this.regionList.regions!![selectedIndex]
     }
 }

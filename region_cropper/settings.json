@@ -1,67 +1,67 @@
 {
-  "view_only" : false,
+  "view_only": false,
   "default_label_number": 1,
-  "selected_region_stroke_color": "#ff00ff",
-  "dragging_region_stroke_color": "#ffcc00",
+  "selected_region_stroke_color": "#ff0000",
+  "dragging_region_stroke_color": "#ffff00",
   "label_settings": [
     {
       "number": 0,
-      "editable": false,
-      "deletable": false,
-      "color": "#000000"
+      "editable": true,
+      "visible": false,
+      "color": "#FF0000"
     },
     {
       "number": 1,
       "editable": true,
-      "deletable": true,
+      "visible": true,
       "color": "#8FBC8F"
     },
     {
       "number": 2,
       "editable": true,
-      "deletable": true,
+      "visible": false,
       "color": "#0000FF"
     },
     {
       "number": 3,
       "editable": true,
-      "deletable": true,
+      "visible": false,
       "color": "#DEB887"
     },
     {
       "number": 4,
       "editable": true,
-      "deletable": true,
+      "visible": false,
       "color": "#F0FFFF"
     },
     {
       "number": 5,
       "editable": true,
-      "deletable": true,
+      "visible": false,
       "color": "#FFA500"
     },
     {
       "number": 6,
       "editable": true,
-      "deletable": true,
+      "visible": false,
       "color": "#FFC0CB"
     },
     {
       "number": 7,
       "editable": true,
-      "deletable": true,
+      "visible": false,
       "color": "#7FFFD4"
     },
     {
       "number": 8,
       "editable": true,
-      "deletable": true,
+      "visible": false,
       "color": "#6B8E23"
     },
     {
       "number": 9,
       "editable": true,
-      "deletable": true,
+      "visible": false,
       "color": "#F08080"
     }
   ]

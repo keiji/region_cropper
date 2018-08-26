@@ -21,7 +21,6 @@ import com.google.gson.GsonBuilder
 import com.google.gson.annotations.Expose
 import com.google.gson.annotations.SerializedName
 import javafx.scene.paint.Color
-import javafx.scene.paint.Paint
 import java.io.File
 import java.nio.charset.Charset
 import java.util.*
@@ -71,10 +70,11 @@ data class Settings(
 
     companion object {
         fun getInstance(filePath: String): Settings {
-            val source = File(filePath).readText(Charset.forName("UTF-8"))
-            val settings = Gson().fromJson(source, Settings::class.java)!!
-            Collections.sort(settings.labelSettings, LabelComparator())
-            return settings
+            File(filePath).reader(Charset.forName("UTF-8")).use {
+                val settings = Gson().fromJson(it, Settings::class.java)!!
+                Collections.sort(settings.labelSettings, LabelComparator())
+                return settings
+            }
         }
     }
 
@@ -110,8 +110,8 @@ data class Settings(
             var editable: Boolean,
 
             @Expose
-            @SerializedName("deletable")
-            var deletable: Boolean,
+            @SerializedName("visible")
+            var visible: Boolean,
 
             @Expose
             @SerializedName("color")
