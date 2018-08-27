@@ -27,10 +27,10 @@ import java.util.*
 class PositionComparator : Comparator<Region> {
 
     override fun compare(obj1: Region, obj2: Region): Int {
-        val distance1 = Math.sqrt(Math.pow(obj1.rect.centerX().toDouble(), 2.0)
-                + Math.pow(obj1.rect.centerY().toDouble(), 2.0))
-        val distance2 = Math.sqrt(Math.pow(obj2.rect.centerX().toDouble(), 2.0)
-                + Math.pow(obj2.rect.centerY().toDouble(), 2.0))
+        val distance1 = Math.sqrt(Math.pow(obj1.rect.centerX.toDouble(), 2.0)
+                + Math.pow(obj1.rect.centerY.toDouble(), 2.0))
+        val distance2 = Math.sqrt(Math.pow(obj2.rect.centerX.toDouble(), 2.0)
+                + Math.pow(obj2.rect.centerY.toDouble(), 2.0))
 
         when {
             distance1 > distance2 -> return 1
@@ -42,7 +42,7 @@ class PositionComparator : Comparator<Region> {
 
 data class AnnotationList(
         @SerializedName("generator")
-        val generator: String?,
+        var generator: String?,
 
         @SerializedName("file_name")
         val fileName: String,
@@ -52,7 +52,11 @@ data class AnnotationList(
 
         @SerializedName("created_at")
         var createdAt: String?
+
 ) {
+    @SerializedName("updated_at")
+    var updatedAt: String? = null
+
     companion object {
         fun getInstance(filePath: String): AnnotationList {
             val source = File(filePath).readText(Charset.forName("UTF-8"))
@@ -63,7 +67,12 @@ data class AnnotationList(
         }
     }
 
-    fun save(file: File) {
+    fun save(file: File, generator: String?) {
+        generator?.let {
+            this.generator = it
+        }
+        this.updatedAt = Utils.createdAt()
+
         val gson = GsonBuilder().setPrettyPrinting().create();
         file.writeText(gson.toJson(this, AnnotationList::class.java), Charset.forName("UTF-8"))
     }

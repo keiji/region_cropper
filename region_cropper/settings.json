@@ -1,19 +1,19 @@
 {
   "view_only": false,
-  "default_label_number": 1,
-  "selected_region_stroke_color": "#ff0000",
+  "default_label_number": 0,
+  "selected_region_stroke_color": "#00ffff",
   "dragging_region_stroke_color": "#ffff00",
   "label_settings": [
     {
       "number": 0,
       "editable": true,
-      "visible": false,
+      "visible": true,
       "color": "#FF0000"
     },
     {
       "number": 1,
       "editable": true,
-      "visible": true,
+      "visible": false,
       "color": "#8FBC8F"
     },
     {

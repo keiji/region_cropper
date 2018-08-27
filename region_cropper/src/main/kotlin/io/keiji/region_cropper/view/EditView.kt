@@ -28,7 +28,6 @@ import javafx.scene.input.MouseEvent
 import javafx.scene.paint.Color
 import java.util.*
 
-const val MIN_REGION_SIZE = 1.0f
 const val LIMIT_SAVE_STATE = 200
 
 private val NOT_SELECTED = Region(-1.0, 0,
@@ -128,10 +127,10 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
 
     init {
         addEventFilter(KeyEvent.KEY_PRESSED) { event ->
-            val shiftValue = if (event.isShiftDown) 1.0f else Math.floor(8.0f / scale).toFloat()
+            val shiftValue = if (event.isShiftDown) minRegionSize else minRegionSize * 4.0f
 
             val labelSetting: Settings.Label = settings.labelSettings[selectedCandidate.label]
-            val editable: Boolean = labelSetting.editable && !settings.viewOnly
+            val editable: Boolean = labelSetting.editable && labelSetting.visible && !settings.viewOnly
 
             when {
                 event.isShiftDown && event.code == KeyCode.SPACE -> isFocus = Focus.Locked
@@ -249,17 +248,16 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
                     }
 
                     draggingRect?.let {
-                        it.left = Math.round(Math.min(draggingStartPoint.x, tempPoint.x)).toFloat()
-                        it.right = Math.round(Math.max(draggingStartPoint.x, tempPoint.x)).toFloat()
-                        it.top = Math.round(Math.min(draggingStartPoint.y, tempPoint.y)).toFloat()
-                        it.bottom = Math.round(Math.max(draggingStartPoint.y, tempPoint.y)).toFloat()
+                        it.left = Math.min(draggingStartPoint.x, tempPoint.x).toFloat()
+                        it.right = Math.max(draggingStartPoint.x, tempPoint.x).toFloat()
+                        it.top = Math.min(draggingStartPoint.y, tempPoint.y).toFloat()
+                        it.bottom = Math.max(draggingStartPoint.y, tempPoint.y).toFloat()
                     }
 
                     isInvalidated = true
                 }
                 event.button == MouseButton.PRIMARY && event.eventType == MouseEvent.MOUSE_RELEASED -> {
                     draggingRect?.let {
-                        validateRect(it)
                         addRect(it)
                         isInvalidated = true
                     }
@@ -295,7 +293,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
     }
 
     private fun setLabel(label: Int, moveNext: Boolean = false) {
-        if (selectedCandidate == NOT_SELECTED) {
+        if (selectedCandidate === NOT_SELECTED) {
             return
         }
 
@@ -313,8 +311,8 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
     var paddingVertical: Double = 0.0
 
     private fun convertLogicalPoint(x: Double, y: Double, point: Point) {
-        val xPos: Double = (x - paddingHorizontal) / scale
-        val yPos: Double = (y - paddingVertical) / scale
+        val xPos: Double = (x - paddingHorizontal) / scale / imageData.width
+        val yPos: Double = (y - paddingVertical) / scale / imageData.height
 
         point.x = xPos
         point.y = yPos
@@ -386,7 +384,7 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
             }
 
             for (c: Region in annotationList.regions) {
-                if (c == selectedCandidate) {
+                if (c === selectedCandidate) {
                     continue
                 }
                 drawRegion(c, gc)
@@ -421,14 +419,14 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
         // 現在の選択領域を切り抜いた画像を重ねることで背景をくり抜いたように見せる
         gc.drawImage(
                 imageData,
-                selectedCandidate.rect.left.toDouble(),
-                selectedCandidate.rect.top.toDouble(),
-                selectedCandidate.rect.width().toDouble(),
-                selectedCandidate.rect.height().toDouble(),
-                selectedCandidate.rect.left * scale,
-                selectedCandidate.rect.top * scale,
-                selectedCandidate.rect.width() * scale,
-                selectedCandidate.rect.height() * scale
+                selectedCandidate.rect.left * imageData.width,
+                selectedCandidate.rect.top * imageData.height,
+                selectedCandidate.rect.width * imageData.width,
+                selectedCandidate.rect.height * imageData.height,
+                selectedCandidate.rect.left * scale * imageData.width,
+                selectedCandidate.rect.top * scale * imageData.height,
+                selectedCandidate.rect.width * scale * imageData.width,
+                selectedCandidate.rect.height * scale * imageData.height
         )
 
         gc.restore()
@@ -441,16 +439,16 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
     private fun drawDraggingRect(gc: GraphicsContext, draggingRect: Region.Rect) {
         gc.stroke = settings.draggingRegionStrokeWebColor
         gc.strokeRect(
-                draggingRect.left.toDouble() * scale,
-                draggingRect.top.toDouble() * scale,
-                draggingRect.width().toDouble() * scale,
-                draggingRect.height().toDouble() * scale)
+                draggingRect.left.toDouble() * scale * imageData.width,
+                draggingRect.top.toDouble() * scale * imageData.height,
+                draggingRect.width.toDouble() * scale * imageData.width,
+                draggingRect.height.toDouble() * scale * imageData.height)
     }
 
     private val margin: Double = 2.0
 
     private fun drawRegion(c: Region, gc: GraphicsContext, isSelected: Boolean = false) {
-        if (c == NOT_SELECTED) {
+        if (c === NOT_SELECTED) {
             return
         }
 
@@ -459,15 +457,21 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
             return
         }
 
-        val rect: Region.Rect = c.rect
+        val rect: Region.Rect = c.rect.copy().also {
+            it.left = it.left * imageData.width.toFloat()
+            it.top = it.top * imageData.height.toFloat()
+            it.right = it.right * imageData.width.toFloat()
+            it.bottom = it.bottom * imageData.height.toFloat()
+        }
+
         val color = settings.labelSettings[c.label].webColor
 
         gc.stroke = color
         gc.strokeRect(
                 rect.left * scale,
                 rect.top * scale,
-                rect.width() * scale,
-                rect.height() * scale
+                rect.width * scale,
+                rect.height * scale
         )
 
         if (!isSelected) {
@@ -478,16 +482,12 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
         gc.strokeRect(
                 (rect.left) * scale - 2,
                 (rect.top) * scale - 2,
-                (rect.width()) * scale + 4,
-                (rect.height()) * scale + 4
+                (rect.width) * scale + 4,
+                (rect.height) * scale + 4
         )
 
-        if (c.label == 0) {
-            return
-        }
-
-        val horizontalCenter = (rect.left + rect.width() / 2) * scale - keyUpImage.width / 2
-        val verticalCenter = (rect.top + rect.height() / 2) * scale - keyLeftImage.height / 2
+        val horizontalCenter = (rect.left + rect.width / 2) * scale - keyUpImage.width / 2
+        val verticalCenter = (rect.top + rect.height / 2) * scale - keyLeftImage.height / 2
 
         val topY = (rect.top - margin) * scale - keyUpImage.height
         val bottomY = (rect.bottom + margin) * scale
@@ -563,24 +563,30 @@ class EditView(val callback: Callback, var settings: Settings) : Canvas() {
     private fun validateRect(rect: Region.Rect) {
         rect.left = Math.max(0.0f, rect.left)
         rect.top = Math.max(0.0f, rect.top)
-        rect.right = Math.min(imageData.width.toFloat(), rect.right)
-        rect.bottom = Math.min(imageData.height.toFloat(), rect.bottom)
+        rect.right = Math.min(1.0f, rect.right)
+        rect.bottom = Math.min(1.0f, rect.bottom)
 
-        if (rect.width() < MIN_REGION_SIZE) {
+        if (rect.width < minRegionSize) {
             when {
-                rect.left == 0.0f -> rect.right = MIN_REGION_SIZE
-                rect.right == imageData.width.toFloat() -> rect.left = imageData.width.toFloat() - MIN_REGION_SIZE
-                else -> rect.right = rect.left + MIN_REGION_SIZE
+                rect.left == 0.0f -> rect.right = minRegionSize
+                rect.right == imageData.width.toFloat() -> rect.left = 1.0f - minRegionSize
+                else -> rect.right = rect.left + minRegionSize
             }
         }
-        if (rect.height() < MIN_REGION_SIZE) {
+        if (rect.height < minRegionSize) {
             when {
-                rect.top == 0.0f -> rect.bottom = MIN_REGION_SIZE
-                rect.bottom == imageData.height.toFloat() -> rect.top = imageData.height.toFloat() - MIN_REGION_SIZE
-                else -> rect.bottom = rect.top + MIN_REGION_SIZE
+                rect.top == 0.0f -> rect.bottom = minRegionSize
+                rect.bottom == imageData.height.toFloat() -> rect.top = 1.0f - minRegionSize
+                else -> rect.bottom = rect.top + minRegionSize
             }
         }
     }
+
+    private val minRegionSize
+        get() = Math.min(
+                1.0f / imageData.width.toFloat(),
+                1.0f / imageData.height.toFloat()
+        )
 
     private fun move(x: Float, y: Float) {
         onUpdate()

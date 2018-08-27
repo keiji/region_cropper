@@ -46,21 +46,17 @@ data class Region(
             var bottom: Float
     ) {
 
-        fun width(): Float {
-            return right - left
-        }
+        val width: Float
+            get() = right - left
 
-        fun height(): Float {
-            return bottom - top
-        }
+        val height: Float
+            get() = bottom - top
 
-        fun centerX(): Float {
-            return left + width() / 2
-        }
+        val centerX: Float
+            get() = left + width / 2
 
-        fun centerY(): Float {
-            return top + height() / 2
-        }
+        val centerY: Float
+            get() = top + height / 2
 
         fun offset(x: Float, y: Float) {
             left += x

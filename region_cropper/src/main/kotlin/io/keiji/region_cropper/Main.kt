@@ -230,7 +230,8 @@ class Main : App() {
             return
         }
 
-        editView.annotationList.save(aanotationFile)
+        editView.annotationList.save(aanotationFile,
+                "Region Cropper")
     }
 
     private fun initEditView() {
@@ -335,7 +336,7 @@ class Main : App() {
             val rect = region.rect
             val writableImage = WritableImage(imageData.pixelReader,
                     rect.left.toInt(), rect.top.toInt(),
-                    rect.width().toInt(), rect.height().toInt())
+                    rect.width.toInt(), rect.height.toInt())
             val file = File(filePathWithLabel, String.format("%s-%d.png", imageFile, index))
             ImageIO.write(SwingFXUtils.fromFXImage(writableImage, null), "png", file);
             index++
