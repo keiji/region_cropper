@@ -8,12 +8,12 @@ import java.net.URL
 
 class RegionListTest {
 
-    var candidateList: CandidateList? = null
+    var candidateList: AnnotationList? = null
 
     @Before
     fun setUp() {
-        val url: URL = CandidateList::class.java.getResource("/mizuasato-BkoKavZCQAAjU7e.json")
-        candidateList = CandidateList.getInstance(url.path)
+        val url: URL = AnnotationList::class.java.getResource("/mizuasato-BkoKavZCQAAjU7e.json")
+        candidateList = AnnotationList.getInstance(url.path)
     }
 
     @After
@@ -27,11 +27,10 @@ class RegionListTest {
         assertEquals("Megane Co", candidateList!!.generator)
         assertEquals("mizuasato-BkoKavZCQAAjU7e.jpg", candidateList!!.fileName)
         assertEquals("2016-09-11T13:11:03.074767", candidateList!!.createdAt)
-        assertEquals("20160906153112", candidateList!!.detectedFaces.modelVersion)
 
-        assertEquals(7, candidateList!!.detectedFaces.regions.size)
+        assertEquals(7, candidateList!!.regions.size)
 
-        candidateList!!.detectedFaces.regions[0].let {
+        candidateList!!.regions[0].let {
             assertEquals(0.9999978542327881, it.probability, 0.0000000000000001)
             assertEquals(true, it.label)
 
