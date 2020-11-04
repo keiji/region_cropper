@@ -1,5 +1,10 @@
 # Region Cropper
 
+**This project is no longer maintained.**
+
+Lately, I'm an effort to develop new tool that [mrdb-web-client](https://github.com/keiji/mrdb-web-client).
+Please consider to use this.
+
 ## Requirements
 
  * Java > 1.8.0_40
